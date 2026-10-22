@@ -1,0 +1,26 @@
+{
+  "attribution": {
+    "commit": "",
+    "pr": "",
+    "sessionUrl": false
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/guard-coauthor-trailer.sh\"",
+            "statusMessage": "Checking commit trailer"
+          },
+          {
+            "type": "command",
+            "command": "bash \"${CLAUDE_PROJECT_DIR:-.}/scripts/guard-truncated-logs.sh\"",
+            "statusMessage": "Checking log capture"
+          }
+        ]
+      }
+    ]
+  }
+}
