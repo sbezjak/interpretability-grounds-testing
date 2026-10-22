@@ -2,13 +2,13 @@
 
 Every number below is worked out by hand, so a pass means the code does the arithmetic we agreed on.
 Runnable two ways:
-    .venv/bin/python test_dana_patching.py      (plain asserts + summary)
-    pytest test_dana_patching.py                (test_* discovery)
+    .venv/bin/python test_outcome_leak.py       (plain asserts + summary)
+    pytest test_outcome_leak.py                 (test_* discovery)
 """
 
 import math
 
-from dana_patching import expected_blame, fraction_restored, gate, read_curve
+from outcome_leak import expected_blame, fraction_restored, gate, read_curve
 
 
 def one_hot(d, p=1.0):

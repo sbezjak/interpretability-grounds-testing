@@ -1,0 +1,6 @@
+[run-evidence] 2026-10-22T13:41:25Z | .venv/bin/python outcome_leak.py smoke
+[run-evidence] predicted eta=5-20 min (estimate: 1-2 min load + ~35 passes; no measurement yet) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights: 100%|██████████| 288/288 [00:00<00:00, 5365.82it/s]
+/Users/sara/.local/share/uv/python/cpython-3.11.15-macos-aarch64-none/lib/python3.11/multiprocessing/resource_tracker.py:254: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+  warnings.warn('resource_tracker: There appear to be %d '

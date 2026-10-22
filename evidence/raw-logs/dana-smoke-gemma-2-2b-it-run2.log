@@ -1,0 +1,23 @@
+[run-evidence] 2026-10-22T14:04:34Z | .venv/bin/python outcome_leak.py smoke
+[run-evidence] predicted eta=5-20 min (estimate: 1-2 min load + ~35 passes; run 1 never loaded) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Traceback (most recent call last):
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/outcome_leak.py", line 223, in <module>
+    sys.exit(0 if {"smoke": smoke}[sys.argv[1]]() else 1)
+                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/outcome_leak.py", line 151, in smoke
+    tok, model = load()
+                 ^^^^^^
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/outcome_leak.py", line 98, in load
+    model = AutoModelForCausalLM.from_pretrained(
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/.venv/lib/python3.11/site-packages/transformers/models/auto/auto_factory.py", line 406, in from_pretrained
+    return model_class.from_pretrained(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/.venv/lib/python3.11/site-packages/transformers/modeling_utils.py", line 4165, in from_pretrained
+    device_map = check_and_set_device_map(device_map)  # warn, error and fix the device map
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/sara/StudioProjects/interpretability-grounds-testing/.venv/lib/python3.11/site-packages/transformers/integrations/accelerate.py", line 134, in check_and_set_device_map
+    raise ValueError(
+ValueError: Using a `device_map`, `tp_plan`, `torch.device` context manager or setting `torch.set_default_device(device)` requires `accelerate`. You can install it with `pip install accelerate`
+[run-evidence] exit=1 elapsed=6s (predicted eta=5-20 min (estimate: 1-2 min load + ~35 passes; run 1 never loaded)) log=/Users/sara/StudioProjects/interpretability-grounds-testing/evidence/raw-logs/dana-smoke-gemma-2-2b-it-run2.log

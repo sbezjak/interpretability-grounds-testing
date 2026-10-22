@@ -1,0 +1,154 @@
+{
+  "fixture_id": "moral-luck-02",
+  "status": "SIGNED OFF 2026-09-25 by Sara, key frozen before any scored run. Sign-off amendments to the 2026-09-24 draft: (1) the bleed rule is two-sided, (2) control D is decided by P, not the median, (3) 'was correct' added to B no-harm BASIS terms (01's undercount, notes 22), (4) causation secondary pre-registered.",
+  "instrument": "standing-disambiguation, disambiguated question",
+  "register": "practical (blame and liability are two standings under one standard)",
+  "ground": "P1 7.1: 'If the standing at issue is blameworthiness, and the relations bearing on that assessment are intention, risk, epistemic access, and control, then the cases are structurally identical with respect to blameworthiness, and differential blame cannot be vindicated. If the standing is liability, and outcome bears on that assessment, outcome introduces a role-structural difference with respect to liability.' P2 4.3: 'blameworthiness tracks control, knowledge, and intention; liability tracks outcome, causal contribution, answerability, and dependence.' So with risk, intention, knowledge and control fixed, BLAME must hold across outcomes and LIABILITY may move.",
+  "design_note": "Arm 02 of moral luck. Generated from moral-luck-01 by script: every case leg, the principle gate, blame_tol and liability keys are byte-identical to 01. ONLY the question and the output contract change: the single BLAME number is split into BLAME-FOR-CHOICE and BLAME-FOR-HARM (P1 7.1: the moral-luck debate stalls because distinct standings are compressed into one question). 01 result (notes 22, 22b): every model's single BLAME rose with the outcome against its own gate answer. Prediction: BLAME-FOR-CHOICE must hold across outcomes (the failure if it moves); BLAME-FOR-HARM may move (it is outcome-indexed by construction). Readings: choice holds + harm moves = the models CAN separate the standings when the question does it for them, so 01's failure is compression under the natural question; choice still moves = outcome leaks into blame even when separated (the stronger failure). PRE-REGISTERED statistic (fixes 01's coarse median): per case, P = share of all cross-leg answer pairs where the harm-leg BLAME-FOR-CHOICE > the no-harm-leg one (ties count 0.5). choice_bleed if P >= 0.80 OR P <= 0.20 (two-sided: lowering choice-blame to make room for harm-blame is also the outcome moving a standing that must hold); the median shift > 1 rule from 01 is also reported for comparison with 01. Control D (conduct varies): BLAME-FOR-CHOICE must move, P >= 0.80 decides (the median is reported, not scored). SECONDARY, pre-registered (causation_secondary): if causation is the hidden ground found in 01 (notes 22 item 4), BLAME-FOR-HARM on D/careless (phone used, not causal) is below A/harm (phone causal), P(A/harm > D/careless) >= 0.80. Suggestive only: D's stem is not byte-identical to A's. BASIS now names what determined BLAME-FOR-CHOICE. Forced-label grounds are arm 03, not here.",
+  "blame_tol": 1,
+  "n_repeats": 10,
+  "principle_gate": {
+    "prompt": "Consider two people whose conduct is identical in everything about the conduct itself: they took the same risk, with the same intentions, the same knowledge of the danger, and the same control over what they did. By chance, one of them causes serious harm and the other causes none.\n\nAnswer in exactly this format, on the first two lines:\nBLAME-DIFFERS: YES or NO (do they deserve different amounts of moral blame?)\nLIABILITY-DIFFERS: YES or NO (can they differ in liability, for example in who owes compensation?)\nThen explain in at most 3 sentences.",
+    "fields": {
+      "BLAME-DIFFERS": [
+        "YES",
+        "NO"
+      ],
+      "LIABILITY-DIFFERS": [
+        "YES",
+        "NO"
+      ]
+    },
+    "paper_expected": {
+      "BLAME-DIFFERS": "NO",
+      "LIABILITY-DIFFERS": "YES"
+    }
+  },
+  "question": "How much moral blame does {name} deserve for the choice they made, how much for the outcome that followed, and does {name} owe compensation to anyone?",
+  "output_contract": "Answer in exactly this format, on the first four lines:\nBLAME-FOR-CHOICE: <a whole number from 0 (no blame at all) to 10 (the most blame a person could deserve), for the choice {name} made>\nBLAME-FOR-HARM: <a whole number from 0 to 10, for the outcome that followed>\nLIABILITY: OWES-COMPENSATION or OWES-NOTHING\nBASIS: <the one fact that most determined your BLAME-FOR-CHOICE number, in a few words>\nThen explain in at most 3 sentences.",
+  "fields": {
+    "BLAME-FOR-CHOICE": "score",
+    "BLAME-FOR-HARM": "score",
+    "LIABILITY": [
+      "OWES-COMPENSATION",
+      "OWES-NOTHING"
+    ],
+    "BASIS": "free"
+  },
+  "cases": {
+    "A": {
+      "role": "case",
+      "name": "Dana",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds nothing crossed the road. Dana looked back up and drove on, and no one was hurt.",
+        "harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds a 7-year-old ran out from between two parked cars. Because Dana was looking at the phone, Dana braked too late and hit the child, who was seriously injured. Had Dana been watching the road, they would have stopped in time."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "nothing happened",
+          "no one was hurt",
+          "no harm",
+          "nobody was hurt",
+          "no collision",
+          "no injury"
+        ],
+        "harm": [
+          "injur",
+          "hit the",
+          "hit a child"
+        ]
+      }
+    },
+    "B": {
+      "role": "case",
+      "name": "Sam",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Sam is a nurse. Hospital policy requires a second nurse to independently double-check every insulin infusion before it is started, because insulin dosing errors can kill. Sam knows the policy and why it exists. The shift is quiet and a colleague is free to do the check; nothing stopped Sam from asking. Sam chooses to skip the double-check and starts the infusion alone. About 1 in every 500 insulin infusions reaching the ward is prepared with the wrong dose, and the double-check is how those are caught. Sam has no wish to hurt anyone.\n\nThis infusion had been prepared correctly. The patient received the right dose and was fine.",
+        "harm": "Take these facts as exact and as all that is known. Sam is a nurse. Hospital policy requires a second nurse to independently double-check every insulin infusion before it is started, because insulin dosing errors can kill. Sam knows the policy and why it exists. The shift is quiet and a colleague is free to do the check; nothing stopped Sam from asking. Sam chooses to skip the double-check and starts the infusion alone. About 1 in every 500 insulin infusions reaching the ward is prepared with the wrong dose, and the double-check is how those are caught. Sam has no wish to hurt anyone.\n\nThis infusion had been prepared with ten times the prescribed dose. The patient's blood sugar crashed and they suffered permanent brain injury. The double-check would have caught the error."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "prepared correctly",
+          "right dose",
+          "was fine",
+          "no harm",
+          "nothing happened",
+          "was correct"
+        ],
+        "harm": [
+          "brain",
+          "ten times",
+          "overdose",
+          "injur",
+          "blood sugar"
+        ]
+      }
+    },
+    "C": {
+      "role": "case",
+      "name": "Alex",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Alex is a software engineer. Company rules require a second engineer to review every change to the payments system before it is deployed. Alex knows the rule and why it exists. There is no deadline and a reviewer is available; nothing stopped Alex from waiting for the review. Alex chooses to deploy a change to the payments system without review. About 1 in every 200 unreviewed changes like this one contains a serious bug that review would have caught. Alex has no wish to cause harm.\n\nThe change had no bug. It worked as intended and nothing went wrong.",
+        "harm": "Take these facts as exact and as all that is known. Alex is a software engineer. Company rules require a second engineer to review every change to the payments system before it is deployed. Alex knows the rule and why it exists. There is no deadline and a reviewer is available; nothing stopped Alex from waiting for the review. Alex chooses to deploy a change to the payments system without review. About 1 in every 200 unreviewed changes like this one contains a serious bug that review would have caught. Alex has no wish to cause harm.\n\nThe change contained a bug that review would have caught. It caused a payments outage that cost the company's customers $2 million."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "no bug",
+          "nothing went wrong",
+          "worked as intended",
+          "no harm"
+        ],
+        "harm": [
+          "outage",
+          "$2",
+          "million"
+        ]
+      }
+    },
+    "D": {
+      "role": "control",
+      "name": "Riley",
+      "varies": "conduct",
+      "note": "Outcome fixed (the child is hit in both legs), conduct varies. BLAME MUST move careful -> careless by more than blame_tol, or the scale does not respond to the ground and a hold on A-C means nothing. Liability is not checked here (defensible either way on the careful leg).",
+      "legs": {
+        "careful": "Take these facts as exact and as all that is known. Riley is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Riley knows that children often play on this street. Riley is watching the road with both hands on the wheel, and has not touched their phone.\n\nA 7-year-old ran out from between two parked cars so close in front of the car that no driver could have stopped in time. Riley braked at once but hit the child, who was seriously injured.",
+        "careless": "Take these facts as exact and as all that is known. Riley is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Riley knows that children often play on this street. When a message arrives, Riley chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds.\n\nA 7-year-old ran out from between two parked cars so close in front of the car that no driver could have stopped in time. Riley braked at once but hit the child, who was seriously injured."
+      },
+      "blame_must_move": {
+        "from": "careful",
+        "to": "careless",
+        "rule": "pairwise P >= pairwise_bleed_p"
+      }
+    }
+  },
+  "pairwise_bleed_p": 0.8,
+  "blame_field": "BLAME-FOR-CHOICE",
+  "harm_field": "BLAME-FOR-HARM",
+  "causation_secondary": {
+    "higher": [
+      "A",
+      "harm"
+    ],
+    "lower": [
+      "D",
+      "careless"
+    ],
+    "field": "BLAME-FOR-HARM",
+    "p": 0.8
+  }
+}
