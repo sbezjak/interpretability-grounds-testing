@@ -6,9 +6,11 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py smoke      step 0 - look at the machinery, three honesty checks
 """
 
+import faulthandler
 import json
 import math
 import pathlib
+import signal
 import sys
 
 DIGITS = range(10)  # the 0-9 blame scale; every digit is one gemma token
@@ -220,4 +222,5 @@ def smoke():
 
 
 if __name__ == "__main__":
+    faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     sys.exit(0 if {"smoke": smoke}[sys.argv[1]]() else 1)
