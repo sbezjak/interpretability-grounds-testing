@@ -25,6 +25,9 @@ to get in.
 - **Read the asymmetry.** A clean on/off effect at a specific place is strong; finding nothing is weak (spread out,
   repaired downstream, wrong place). Claims are about this model, never about Claude's internals.
 - **An absence claim needs a count** from `scripts/count.py <regex> <paths>`, quoted whole.
+- **Absence words need a covering receipt.** Before "only", "the only difference", "nothing else", "not anywhere",
+  "never", "every", "all": name what was compared and show the count or the whole diff. A 0 over ONLY-paths means
+  "not in those paths", never "not anywhere" - rerun `scripts/count.py <regex> .`. An errored or empty search is no result.
 - **Thresholds are written down before the run** (e.g. the leak threshold), never chosen after seeing the numbers.
 - **Explain before building.** Sara wants to understand each step before it is built; plain words, concrete case first.
 - **One step at a time, beginner pace.** Interp is new to Sara: a worked number example before code, show real
