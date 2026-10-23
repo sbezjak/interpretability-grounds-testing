@@ -11,8 +11,8 @@ import math
 import torch
 
 from outcome_leak import (
-    cosine, expected_blame, fraction_removed, fraction_restored, gate, outcome_direction, read_curve, read_removal,
-    remove, riley_gate, shrink, softcap,
+    cosine, expected_blame, fraction_removed, fraction_restored, gate, largest, outcome_direction, read_curve,
+    read_removal, remove, riley_gate, shrink, softcap,
 )
 
 
@@ -142,6 +142,41 @@ def test_remove():
     assert remove(h, None) is h  # no direction (row 0) -> notes unchanged
 
 
+def test_remove_every_token():
+    # the step a toy: 4 tokens, notes [outcome, other, other], u = the outcome slider
+    u = vec(1.0, 0.0, 0.0)
+    notes = torch.stack([vec(0.0, 0.5, 0.2),  # "Dana"
+                         vec(0.1, 0.3, 0.9),  # "phone"
+                         vec(3.0, 0.4, 0.1),  # "child-hurt"
+                         vec(2.0, 0.8, 0.3)])  # the last token
+    # last token only: the last row loses its outcome, "child-hurt" keeps its 3.0
+    last = notes.clone()
+    last[-1] = remove(notes[-1], u)
+    assert torch.allclose(last[-1], vec(0.0, 0.8, 0.3)) and last[2, 0].item() == 3.0
+    # a later layer copies 30% of "child-hurt"'s outcome into the last token: 0.3 x 3.0 = 0.9 comes back
+    assert close(0.3 * (last[2] @ u).item(), 0.9)
+    # every token: every row loses its outcome, so there is nothing left to copy
+    every = remove(notes, u)
+    assert torch.allclose(every, torch.stack([vec(0.0, 0.5, 0.2), vec(0.0, 0.3, 0.9), vec(0.0, 0.4, 0.1),
+                                              vec(0.0, 0.8, 0.3)]))
+    assert close(0.3 * (every[2] @ u).item(), 0.0)
+    # with the real toy u (not rounded): all four tokens end with 0 along u, each the same as removing it alone
+    u = outcome_direction([vec(1.0, 0.0, 0.6), vec(1.0, 0.0, -0.4)])
+    every = remove(notes, u)
+    assert torch.allclose(every @ u, vec(0, 0, 0, 0))
+    assert all(torch.allclose(every[i], remove(notes[i], u)) for i in range(4))
+    assert remove(notes, None) is notes  # no direction (row 0) -> notes unchanged
+
+
+def test_random_control():
+    # 10 random directions at one row: the largest move decides, sign kept
+    assert largest([0.02, -0.01, 0.03, 0.0, -0.02, 0.01, 0.0, 0.02, -0.03, 0.03]) == 0.03
+    assert largest([0.02, -0.12, 0.05]) == -0.12  # one seed moved the leak 12% down
+    # fed to the rules: row 0 every seed under 10% -> holds; row 1 one seed at -12% -> control fails there
+    moves = [largest([0.02, -0.01, 0.03]), largest([0.02, -0.12, 0.05])]
+    assert read_removal([0.6, 0.6], [0.95, 0.95], [0.9, 0.9], [0.95, 0.95], moves) == ([0, 1], [0, 1], [0])
+
+
 def test_shrink_and_rules():
     # the notes.md "read three things" table: Dana leak 2.72 -> 0.4 = 85% removed
     assert round(shrink(2.72, 0.4), 2) == 0.85
@@ -171,7 +206,7 @@ def test_shrink_and_rules():
 
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
-             test_outcome_direction, test_remove, test_shrink_and_rules]
+             test_outcome_direction, test_remove, test_remove_every_token, test_random_control, test_shrink_and_rules]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

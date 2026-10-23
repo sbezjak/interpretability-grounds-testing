@@ -8,6 +8,7 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py lens-from-log <name>   redraw the lens picture from that run's log, no model
     .venv/bin/python outcome_leak.py removal <name>     step 3 - take the outcome direction out, Riley and random checks
     .venv/bin/python outcome_leak.py removal-from-log <name>   redraw the step 3 picture from that run's log, no model
+    .venv/bin/python outcome_leak.py removal-sturdy <name>   step a - last token vs every token, 10 random directions
 """
 
 import faulthandler
@@ -15,6 +16,7 @@ import json
 import math
 import pathlib
 import signal
+import statistics
 import sys
 
 DIGITS = range(10)  # the 0-9 blame scale; every digit is one gemma token
@@ -101,8 +103,16 @@ def outcome_direction(diffs):
 
 
 def remove(h, u):
-    """h without its part along u: h - (h . u) u. u = None (no direction) leaves h as it is."""
-    return h if u is None else h - (h @ u) * u
+    """h without its part along u: h - (h . u) u. u = None (no direction) leaves h as it is.
+
+    h is one token's notes, or a table with one row per token - then every token loses its part along u.
+    """
+    return h if u is None else h - (h @ u)[..., None] * u
+
+
+def largest(moves):
+    """The move furthest from 0, sign kept - the random control passes only if even this one is small."""
+    return max(moves, key=abs)
 
 
 def cosine(a, b):
@@ -186,13 +196,16 @@ def run(model, ids, patch=None):
 
     Notes row 0 = before layer 1, row L = after layer L (27 rows of 2304 numbers).
     patch = (L, notes) overwrites the last token's notes at row L before the model reads on.
+    patch = (L, edit) with edit a function: every token's notes at row L become edit(notes), worked in float.
     """
     layers = model.model.layers
     saved = [None] * (len(layers) + 1)
 
     def at(L):
         def touch(hs):
-            if patch is not None and patch[0] == L:
+            if patch is not None and patch[0] == L and callable(patch[1]):
+                hs[0] = patch[1](hs[0].float()).to(hs.dtype)
+            elif patch is not None and patch[0] == L:
                 hs[0, -1] = patch[1].to(hs.device, hs.dtype)
             saved[L] = hs[0, -1].float().cpu()
 
@@ -468,23 +481,15 @@ def lens_from_log(name):
 CASES = {"Sam": "B", "Alex": "C", "Dana": "A", "Riley": "D"}  # Sam + Alex build the direction, Dana is held out
 
 
-def removal(name):
-    """Step 3: take the outcome direction (built from Sam and Alex) out of the last token's notes, one row at a time.
-
-    Every run gets the removal at that row: Dana both legs, Riley both legs, and Dana with a random direction.
-    """
+def removal_setup():
+    """Load gemma, run every case with nothing removed, apply the gate. Returns the pieces, or None if the gate stops."""
     import transformers
-
-    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
-    png = out / f"{name}.png"
-    assert not png.exists(), f"{png} exists - a run never overwrites, use a new name"
 
     print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
     tok, model = load()
     print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype} | "
           f"layers {len(model.model.layers)}")
     dids = digit_ids(tok)
-    rows = range(len(model.model.layers) + 1)
 
     def blame(probs):
         return expected_blame([probs[i].item() for i in dids])
@@ -508,13 +513,34 @@ def removal(name):
                                                                          legs["Riley", "careless"])
     if stop:
         print("GATE STOP: " + "; ".join(stop))
-        return True
+        return None
     print("GATE GO: Dana leaks with number answers, Riley has a real gap")
 
     def diff(who, a, b, L):
         return base[who, b][0][L] - base[who, a][0][L]
 
-    random_u = unit(torch.randn(model.config.hidden_size, generator=torch.Generator().manual_seed(0)))
+    return model, blame, ids, base, leak, gap, diff
+
+
+def random_direction(model, seed):
+    return unit(torch.randn(model.config.hidden_size, generator=torch.Generator().manual_seed(seed)))
+
+
+def removal(name):
+    """Step 3: take the outcome direction (built from Sam and Alex) out of the last token's notes, one row at a time.
+
+    Every run gets the removal at that row: Dana both legs, Riley both legs, and Dana with a random direction.
+    """
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    png = out / f"{name}.png"
+    assert not png.exists(), f"{png} exists - a run never overwrites, use a new name"
+    setup = removal_setup()
+    if setup is None:
+        return True
+    model, blame, ids, base, leak, gap, diff = setup
+    rows = range(len(model.model.layers) + 1)
+
+    random_u = random_direction(model, 0)
     print("random control direction: seed 0, standard normal, length 1")
 
     print("\n== REMOVAL at the last token, one row at a time (row 0 = before any layer: no direction there)")
@@ -557,7 +583,80 @@ def removal(name):
     return True
 
 
-def removal_picture(png, shrinks, kept, moves):
+FIRST_REMOVAL = "dana-outcome-removal-gemma-2-2b-it"  # the last-token run that step a must reproduce
+SEEDS = range(10)  # step a: 10 random directions, each removed the same way as the real one
+
+
+def removal_sturdy(name):
+    """Step a: the removal two ways - last token only (must reproduce FIRST_REMOVAL) and every token - each with 10
+    random directions as the control. Agreed with Sara 2026-10-23, before the run."""
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    pngs = {mode: out / f"{name}-{mode}.png" for mode in ("last", "every")}
+    assert not any(p.exists() for p in pngs.values()), f"{pngs} exist - a run never overwrites, use a new name"
+    first = read_removal_log(FIRST_REMOVAL)
+    setup = removal_setup()
+    if setup is None:
+        return True
+    model, blame, ids, base, leak, gap, diff = setup
+    rows = range(len(model.model.layers) + 1)
+    randoms = [random_direction(model, s) for s in SEEDS]
+    print(f"random control directions: seeds {SEEDS.start}-{SEEDS.stop - 1}, standard normal, length 1")
+
+    def removed(who, leg, L, direction, mode):
+        if mode == "last":  # the first run's way: the saved notes, minus u, swapped in at the last token
+            patch = (L, remove(base[who, leg][0][L], direction))
+        else:  # every token's notes at row L lose their part along u
+            patch = (L, lambda hs: remove(hs, None if direction is None else direction.to(hs.device)))
+        return blame(run(model, ids[who, leg], patch)[1])
+
+    def leak_after(L, direction, mode):
+        d = {leg: removed("Dana", leg, L, direction, mode) for leg in ("no_harm", "harm")}
+        return d["harm"][0] - d["no_harm"][0], min(m for _, m in d.values())
+
+    ok = True
+    for mode, title in (("last", "the last token only (the first run's way)"), ("every", "EVERY token")):
+        print(f"\n== REMOVAL ({mode}) at {title}, one row at a time (row 0 = before any layer: no direction there)")
+        print(f"random = the {len(SEEDS)} random directions removed the same way: largest move (sign kept), median")
+        print("row | Dana leak  shrink  mass | Riley gap  kept  mass | random largest  median | holds")
+        shrinks, masses, kept, riley_masses, moves, afters = [], [], [], [], [], []
+        for L in rows:
+            u = outcome_direction([diff("Sam", "no_harm", "harm", L), diff("Alex", "no_harm", "harm", L)])
+            dana, dana_mass = leak_after(L, u, mode)
+            r = {leg: removed("Riley", leg, L, u, mode) for leg in ("careful", "careless")}
+            gap_after = r["careless"][0] - r["careful"][0]
+            control = [shrink(leak, leak_after(L, ru, mode)[0]) for ru in randoms]
+            shrinks.append(shrink(leak, dana))
+            masses.append(dana_mass)
+            kept.append(gap_after / gap)
+            riley_masses.append(min(m for _, m in r.values()))
+            moves.append(largest(control))
+            afters.append((dana, gap_after))
+            holds = L in read_removal(shrinks, masses, kept, riley_masses, moves)[2]
+            print(f" {L:2d} | {dana:+.4f} {shrinks[-1]:+.3f} {masses[-1]:.3f} | "
+                  f"{gap_after:+.4f} {kept[-1]:+.3f} {riley_masses[-1]:.3f} | "
+                  f"{moves[-1]:+.3f} {statistics.median(control):+.3f} | {'ALL THREE' if holds else '-'}")
+
+        taken, grounds, all_three = read_removal(shrinks, masses, kept, riley_masses, moves)
+        print(f"\nREAD {mode} line 3, taken out (shrink >= {SHRINK_MIN}, Dana mass >= {MASS_MIN}): rows {taken}")
+        print(f"READ {mode} line 4, + grounds kept (Riley keeps >= {KEEP_MIN}, Riley mass >= {MASS_MIN}): "
+              f"rows {grounds}")
+        print(f"READ {mode} line 5, + control (all {len(SEEDS)} random moves < {CONTROL_MAX}): rows {all_three}")
+        print(f"largest random move over all rows: {max(moves, key=abs):+.3f} | largest shrink: {max(shrinks):+.3f} "
+              f"at row {shrinks.index(max(shrinks))}")
+        if mode == "last":
+            # the first run logged 4 decimals, well inside SANITY_TOL
+            d = max(max(abs(dana - f[0]), abs(gap_after - f[2])) for (dana, gap_after), f in zip(afters, first))
+            ok = d <= SANITY_TOL
+            print(f"check: last-token removal vs {FIRST_REMOVAL}, largest difference in Dana leak or Riley gap "
+                  f"{d:.6f} -> {'PASS' if ok else 'FAIL'} (tolerance {SANITY_TOL})")
+        removal_picture(pngs[mode], shrinks, kept, moves, f"largest of {len(SEEDS)} random directions: leak moved",
+                        f"removal at {'the last token' if mode == 'last' else 'every token'} per run")
+        print(f"picture: {pngs[mode]}")
+    return ok
+
+
+def removal_picture(png, shrinks, kept, moves, control="random direction: leak moved",
+                    how="one removal at the last token per run"):
     """The step 3 curves per row. Plain data in, so the picture can be redrawn from a log."""
     import matplotlib
 
@@ -570,7 +669,7 @@ def removal_picture(png, shrinks, kept, moves):
             label="Dana's leak taken out (should rise)")
     ax.plot(rows, kept, color=COLORS["no_harm"], linewidth=2, marker="s", markersize=4,
             label="Riley's gap kept (should stay near 1)")
-    ax.plot(rows, moves, color=MUTED, linewidth=1.5, linestyle="--", label="random direction: leak moved (should stay 0)")
+    ax.plot(rows, moves, color=MUTED, linewidth=1.5, linestyle="--", label=f"{control} (should stay 0)")
     for y, text in ((SHRINK_MIN, "taken out line"), (KEEP_MIN, "kept line")):
         ax.axhline(y, color=MUTED, linestyle=":", linewidth=1)
         ax.text(rows[-1], y, text, ha="right", va="bottom", fontsize=8, color=MUTED)
@@ -579,26 +678,32 @@ def removal_picture(png, shrinks, kept, moves):
     ax.legend(loc="upper left", bbox_to_anchor=(0, -0.15), ncol=2, frameon=False, fontsize=9)
     ax.set_title("Taking the outcome direction out - built from Sam and Alex, tested on Dana\n", loc="left",
                  fontsize=12, fontweight="bold")
-    ax.text(0, 1.02, f"one removal at the last token per run - {MODEL}", transform=ax.transAxes, fontsize=9,
-            color=MUTED)
+    ax.text(0, 1.02, f"{how} - {MODEL}", transform=ax.transAxes, fontsize=9, color=MUTED)
     fig.tight_layout()
     fig.savefig(png, dpi=150, facecolor="white")
     plt.close(fig)
 
 
-def removal_from_log(name):
-    """Redraw the step 3 picture from a run's logged table, no model. Writes <name>-redrawn.png next to the log."""
+def read_removal_log(name):
+    """The first removal run's table, per row: (Dana leak, shrink, Riley gap, kept, random move) as logged."""
     import re
 
     out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
     # row | cos | Sam~Alex | Dana leak shrink mass | Riley gap kept mass | random leak move | holds
-    row = re.compile(r"^\s*(\d+) \|.*?\|.*?\| \S+ (\S+) \S+ \| \S+ (\S+) \S+ \| \S+ (\S+) \|")
+    row = re.compile(r"^\s*(\d+) \|.*?\|.*?\| (\S+) (\S+) \S+ \| (\S+) (\S+) \S+ \| \S+ (\S+) \|")
     lines = (out / f"{name}.log").read_text().split("== REMOVAL")[1].split("READ line 3")[0].splitlines()
     rows = [m.groups() for m in map(row.match, lines) if m]
     assert [int(r[0]) for r in rows] == list(range(27)), f"expected removal rows 0-26 in the log, got {len(rows)}"
+    return [tuple(float(x) for x in r[1:]) for r in rows]
+
+
+def removal_from_log(name):
+    """Redraw the step 3 picture from a run's logged table, no model. Writes <name>-redrawn.png next to the log."""
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
     png = out / f"{name}-redrawn.png"
     assert not png.exists(), f"{png} exists - never overwritten"
-    removal_picture(png, *([float(r[i]) for r in rows] for i in (1, 2, 3)))
+    rows = read_removal_log(name)
+    removal_picture(png, *([r[i] for r in rows] for i in (1, 3, 4)))
     print(f"picture: {png}")
     return True
 
@@ -607,4 +712,5 @@ if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
     sys.exit(0 if (smoke() if cmd == "smoke" else {"patching": patching, "lens-from-log": lens_from_log,
-                                                   "removal": removal, "removal-from-log": removal_from_log}[cmd](sys.argv[2])) else 1)
+                                                   "removal": removal, "removal-from-log": removal_from_log,
+                                                   "removal-sturdy": removal_sturdy}[cmd](sys.argv[2])) else 1)

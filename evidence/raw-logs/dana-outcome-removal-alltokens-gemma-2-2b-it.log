@@ -1,0 +1,97 @@
+[run-evidence] 2026-10-23T11:34:34Z | .venv/bin/python -u outcome_leak.py removal-sturdy dana-outcome-removal-alltokens-gemma-2-2b-it
+[run-evidence] predicted eta=~7 min (removal run: 53 s for ~170 passes; this ~1300) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:00<01:08,  4.19it/s]Loading weights:   5%|▌         | 15/288 [00:00<00:05, 53.89it/s]Loading weights:  13%|█▎        | 37/288 [00:00<00:02, 110.34it/s]Loading weights:  20%|██        | 59/288 [00:00<00:01, 142.97it/s]Loading weights:  28%|██▊       | 80/288 [00:00<00:01, 124.12it/s]Loading weights:  36%|███▌      | 103/288 [00:00<00:01, 143.23it/s]Loading weights:  43%|████▎     | 125/288 [00:00<00:01, 160.78it/s]Loading weights:  50%|████▉     | 143/288 [00:01<00:00, 165.19it/s]Loading weights:  56%|█████▌    | 161/288 [00:01<00:01, 102.21it/s]Loading weights:  63%|██████▎   | 181/288 [00:01<00:00, 119.13it/s]Loading weights:  70%|███████   | 202/288 [00:01<00:00, 135.38it/s]Loading weights:  77%|███████▋  | 223/288 [00:01<00:00, 151.60it/s]Loading weights:  84%|████████▎ | 241/288 [00:02<00:00, 102.61it/s]Loading weights:  89%|████████▉ | 257/288 [00:02<00:00, 112.61it/s]Loading weights:  94%|█████████▍| 272/288 [00:02<00:00, 116.50it/s]Loading weights: 100%|█████████▉| 287/288 [00:02<00:00, 116.53it/s]Loading weights: 100%|██████████| 288/288 [00:02<00:00, 119.25it/s]
+model google/gemma-2-2b-it revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 | dtype torch.bfloat16 | layers 26
+
+== BASELINE. every case, both legs, nothing removed
+Sam   no_harm  318 tokens | expected blame 6.0206 | digit mass 0.9999
+Sam   harm     337 tokens | expected blame 7.1192 | digit mass 1.0000
+Alex  no_harm  301 tokens | expected blame 5.4585 | digit mass 0.9999
+Alex  harm     313 tokens | expected blame 6.7066 | digit mass 0.9999
+Dana  no_harm  343 tokens | expected blame 3.5629 | digit mass 0.9999
+Dana  harm     376 tokens | expected blame 6.2839 | digit mass 0.9999
+Riley careful  285 tokens | expected blame 3.0598 | digit mass 0.9999
+Riley careless 293 tokens | expected blame 6.4988 | digit mass 0.9999
+Sam leak = harm - no_harm = +1.0986 (information only)
+Alex leak = harm - no_harm = +1.2482 (information only)
+Dana leak = harm - no_harm = +2.7211
+Riley gap = careless - careful = +3.4390
+GATE GO: Dana leaks with number answers, Riley has a real gap
+random control directions: seeds 0-9, standard normal, length 1
+
+== REMOVAL (last) at the last token only (the first run's way), one row at a time (row 0 = before any layer: no direction there)
+random = the 10 random directions removed the same way: largest move (sign kept), median
+row | Dana leak  shrink  mass | Riley gap  kept  mass | random largest  median | holds
+  0 | +2.7211 +0.000 1.000 | +3.4390 +1.000 1.000 | +0.046 -0.002 | -
+  1 | +2.7315 -0.004 1.000 | +3.4041 +0.990 1.000 | +0.042 -0.005 | -
+  2 | +2.6895 +0.012 1.000 | +3.3229 +0.966 1.000 | +0.042 +0.016 | -
+  3 | +2.7225 -0.001 1.000 | +3.3564 +0.976 1.000 | -0.046 -0.008 | -
+  4 | +2.6696 +0.019 1.000 | +3.3590 +0.977 1.000 | +0.046 +0.012 | -
+  5 | +2.7316 -0.004 1.000 | +3.4082 +0.991 1.000 | +0.020 +0.016 | -
+  6 | +2.7052 +0.006 1.000 | +3.4360 +0.999 1.000 | +0.058 +0.009 | -
+  7 | +2.6454 +0.028 1.000 | +3.3796 +0.983 1.000 | +0.046 +0.019 | -
+  8 | +2.7086 +0.005 1.000 | +3.4887 +1.014 1.000 | +0.044 +0.017 | -
+  9 | +2.7069 +0.005 1.000 | +3.4267 +0.996 1.000 | +0.053 -0.004 | -
+ 10 | +2.7931 -0.026 1.000 | +3.4879 +1.014 1.000 | -0.026 +0.004 | -
+ 11 | +2.9519 -0.085 1.000 | +3.2996 +0.959 1.000 | -0.027 +0.011 | -
+ 12 | +2.7018 +0.007 1.000 | +3.3789 +0.983 1.000 | +0.029 -0.001 | -
+ 13 | +2.6186 +0.038 1.000 | +3.5783 +1.041 1.000 | +0.036 +0.020 | -
+ 14 | +2.7551 -0.012 1.000 | +3.4606 +1.006 1.000 | +0.031 +0.015 | -
+ 15 | +2.2343 +0.179 1.000 | +3.6182 +1.052 1.000 | +0.050 +0.005 | -
+ 16 | +1.6095 +0.409 1.000 | +3.4382 +1.000 1.000 | -0.020 -0.005 | -
+ 17 | +1.2309 +0.548 1.000 | +3.3624 +0.978 1.000 | -0.014 -0.001 | ALL THREE
+ 18 | +1.2920 +0.525 1.000 | +2.9340 +0.853 1.000 | -0.031 +0.007 | ALL THREE
+ 19 | +0.8167 +0.700 1.000 | +2.7685 +0.805 1.000 | +0.035 +0.003 | ALL THREE
+ 20 | +0.9175 +0.663 1.000 | +2.7538 +0.801 1.000 | +0.044 +0.013 | ALL THREE
+ 21 | +0.7512 +0.724 1.000 | +2.4357 +0.708 1.000 | +0.034 +0.006 | -
+ 22 | +0.5469 +0.799 1.000 | +2.0244 +0.589 1.000 | +0.046 +0.015 | -
+ 23 | +0.7433 +0.727 1.000 | +2.1490 +0.625 1.000 | +0.042 +0.019 | -
+ 24 | +0.7065 +0.740 1.000 | +1.9594 +0.570 1.000 | +0.019 +0.005 | -
+ 25 | +0.9202 +0.662 1.000 | +1.7060 +0.496 1.000 | +0.026 +0.002 | -
+ 26 | +0.5216 +0.808 1.000 | +1.3648 +0.397 1.000 | +0.022 +0.006 | -
+
+READ last line 3, taken out (shrink >= 0.5, Dana mass >= 0.9): rows [17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+READ last line 4, + grounds kept (Riley keeps >= 0.8, Riley mass >= 0.9): rows [17, 18, 19, 20]
+READ last line 5, + control (all 10 random moves < 0.1): rows [17, 18, 19, 20]
+largest random move over all rows: +0.058 | largest shrink: +0.808 at row 26
+check: last-token removal vs dana-outcome-removal-gemma-2-2b-it, largest difference in Dana leak or Riley gap 0.000050 -> PASS (tolerance 0.001)
+picture: <M5>/interpretability-grounds-testing/evidence/raw-logs/dana-outcome-removal-alltokens-gemma-2-2b-it-last.png
+
+== REMOVAL (every) at EVERY token, one row at a time (row 0 = before any layer: no direction there)
+random = the 10 random directions removed the same way: largest move (sign kept), median
+row | Dana leak  shrink  mass | Riley gap  kept  mass | random largest  median | holds
+  0 | +2.7211 +0.000 1.000 | +3.4390 +1.000 1.000 | +0.034 -0.005 | -
+  1 | +1.1713 +0.570 1.000 | +2.2953 +0.667 1.000 | -0.086 +0.000 | -
+  2 | +3.1138 -0.144 1.000 | +3.1207 +0.907 1.000 | -0.056 -0.011 | -
+  3 | +3.0899 -0.136 1.000 | +3.3663 +0.979 1.000 | -0.046 +0.017 | -
+  4 | +2.2629 +0.168 1.000 | +3.2366 +0.941 1.000 | -0.061 -0.013 | -
+  5 | +2.2573 +0.170 1.000 | +3.6248 +1.054 1.000 | +0.045 +0.016 | -
+  6 | +2.0352 +0.252 1.000 | +3.4756 +1.011 1.000 | +0.066 +0.015 | -
+  7 | +3.0315 -0.114 1.000 | +3.2880 +0.956 1.000 | +0.069 +0.031 | -
+  8 | +2.9549 -0.086 1.000 | +3.4537 +1.004 1.000 | +0.084 +0.035 | -
+  9 | +2.3474 +0.137 1.000 | +3.3009 +0.960 1.000 | +0.042 +0.013 | -
+ 10 | +3.0500 -0.121 1.000 | +3.6710 +1.067 1.000 | -0.056 +0.010 | -
+ 11 | +3.4440 -0.266 1.000 | +4.2376 +1.232 1.000 | +0.066 +0.032 | -
+ 12 | +2.6772 +0.016 1.000 | +3.4534 +1.004 1.000 | +0.099 +0.027 | -
+ 13 | +1.0840 +0.602 1.000 | +3.1083 +0.904 1.000 | +0.111 +0.028 | -
+ 14 | +2.7744 -0.020 1.000 | +3.4805 +1.012 1.000 | +0.114 +0.031 | -
+ 15 | +2.1089 +0.225 1.000 | +3.6511 +1.062 1.000 | +0.068 +0.024 | -
+ 16 | +1.3039 +0.521 1.000 | +3.4244 +0.996 1.000 | +0.048 +0.015 | ALL THREE
+ 17 | +0.8240 +0.697 1.000 | +3.1725 +0.923 1.000 | +0.031 +0.015 | ALL THREE
+ 18 | +0.7963 +0.707 1.000 | +2.7711 +0.806 1.000 | +0.036 +0.002 | ALL THREE
+ 19 | +0.5085 +0.813 1.000 | +2.6921 +0.783 1.000 | -0.037 +0.002 | -
+ 20 | +0.5290 +0.806 1.000 | +2.5481 +0.741 1.000 | +0.024 +0.010 | -
+ 21 | +0.4219 +0.845 1.000 | +2.1479 +0.625 1.000 | +0.046 +0.023 | -
+ 22 | +0.3890 +0.857 1.000 | +1.6094 +0.468 1.000 | +0.041 +0.017 | -
+ 23 | +0.4500 +0.835 1.000 | +1.9663 +0.572 1.000 | +0.040 +0.018 | -
+ 24 | +0.3967 +0.854 1.000 | +1.5834 +0.460 1.000 | +0.029 +0.006 | -
+ 25 | +0.5673 +0.792 1.000 | +1.4690 +0.427 1.000 | +0.040 +0.010 | -
+ 26 | +0.5216 +0.808 1.000 | +1.3648 +0.397 1.000 | +0.022 +0.006 | -
+
+READ every line 3, taken out (shrink >= 0.5, Dana mass >= 0.9): rows [1, 13, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26]
+READ every line 4, + grounds kept (Riley keeps >= 0.8, Riley mass >= 0.9): rows [13, 16, 17, 18]
+READ every line 5, + control (all 10 random moves < 0.1): rows [16, 17, 18]
+largest random move over all rows: +0.114 | largest shrink: +0.857 at row 22
+picture: <M5>/interpretability-grounds-testing/evidence/raw-logs/dana-outcome-removal-alltokens-gemma-2-2b-it-every.png
+[run-evidence] exit=0 elapsed=393s (predicted eta=~7 min (removal run: 53 s for ~170 passes; this ~1300)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/dana-outcome-removal-alltokens-gemma-2-2b-it.log

@@ -275,9 +275,44 @@ token. A "removed model" means that hook switched on for every run - the next st
 Limits: two build cases; about a third of the leak survives a one-token removal (re-read from earlier tokens, as
 the reverse patching suggested); a claim about gemma-2-2b-it only.
 
+### Step a - every token, and 10 random directions (dana-outcome-removal-alltokens-gemma-2-2b-it)
+
+Agreed before the run (2026-10-23): the same direction, removed two ways - at the last token only (must reproduce the
+first run within 0.001) and at **every token** of the prompt - each with **10 random directions** (seeds 0-9), removed
+the same way, as the control: a layer passes the control only if all 10 move Dana's leak by less than 10%. Lines 3
+and 4 unchanged.
+
+**Part 1 - the first result holds.** The last-token removal reproduced the first run (largest difference 0.00005),
+and the 10 random directions moved the leak by at most 5.8% at any layer. Layers 17-20 still pass all three lines - it
+did not rest on one lucky random draw.
+
+**Part 2 - every token takes out more, not all:**
+
+| layer | leak taken out, last token | leak taken out, every token | Riley kept, every token |
+|---|---|---|---|
+| 16 | 41% | **52%** | 99.6% |
+| 17 | 55% | **70%** | 92% |
+| 18 | 52% | **71%** | 81% |
+| 19 | 70% | 81% | 78% (under the line) |
+
+All three lines hold at layers **16, 17 and 18**. So part of the leftover was gemma re-reading the outcome from earlier
+tokens, as in the toy. About 30% still survives at the best layers - held some other way (later layers may rebuild it
+from the words, or the harm paragraph's own tokens carry it in a direction the last-token direction doesn't catch).
+That is the weak kind of null: it doesn't say which.
+
+Three things in the picture (`dana-outcome-removal-alltokens-gemma-2-2b-it-every.png`):
+
+- **Early layers zigzag.** Removing at every token where the direction means little (cosine to Dana's difference
+  under 0.4) jolts gemma either way. The rules caught it: layer 1 fails on Riley (67% kept); layer 13 looked good
+  (60% out, 90% kept) but one random direction moved the leak 11.1% - so it doesn't count. That's what 10 random
+  directions are for.
+- **Layer 26 is the same in both ways** (Dana's leak 0.5216, Riley's gap 1.3648 in both). Expected: after the last layer only
+  the last token's notes become the answer, so the other tokens no longer matter. A free consistency check.
+- **Late layers as before:** more leak out (up to 86%), but Riley's gap goes too.
+
 ### Next (agreed with Sara 2026-10-23)
 
-Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call.
+Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a is done** (above).
 
 - **a) Make it sturdier** (fast, about one run). Remove the direction at **every token**, not only the last - does the
   leftover third go too? And **several random directions** (different seeds), so the control does not rest on one.
