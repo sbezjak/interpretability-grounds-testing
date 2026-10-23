@@ -27,6 +27,10 @@ to get in.
 - **An absence claim needs a count** from `scripts/count.py <regex> <paths>`, quoted whole.
 - **Thresholds are written down before the run** (e.g. the leak threshold), never chosen after seeing the numbers.
 - **Explain before building.** Sara wants to understand each step before it is built; plain words, concrete case first.
+- **One step at a time, beginner pace.** Interp is new to Sara: a worked number example before code, show real
+  printouts / shapes, stop after each step. Terminal steps as exact commands, starting with the `cd` into the repo.
+- **Stop after every run.** Report, go through the results with Sara, and start nothing next without her signal.
+- **Shared machines.** On someone else's Mac (the M5), never stop or kill a process this session did not start.
 - **Smallest solution that solves the problem.** One script, plain hooks, no framework nobody asked for.
 - Name committed artifacts by finding / case + model, never by build stage.
 - In all prose (docs, comments, commits), the only dash character is a single `-`.
