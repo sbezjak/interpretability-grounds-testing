@@ -3,7 +3,9 @@
 Plain explanation: notes.md. Agreed plan and stop rules: next-session-prompt.md.
 Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bottom half: the model.
 
-    .venv/bin/python outcome_leak.py smoke      step 0 - look at the machinery, three honesty checks
+    .venv/bin/python outcome_leak.py smoke              step 0 - look at the machinery, three honesty checks
+    .venv/bin/python outcome_leak.py patching <name>    step 1 (stop rules) -> logit lens -> step 2, both directions
+    .venv/bin/python outcome_leak.py lens-from-log <name>   redraw the lens picture from that run's log, no model
 """
 
 import faulthandler
@@ -36,6 +38,16 @@ def expected_blame(digit_probs):
 def fraction_restored(patched, no_harm, harm):
     """How much of the leak one swap brought back: 0 = none, 1 = all of it."""
     return (patched - no_harm) / (harm - no_harm)
+
+
+def fraction_removed(patched, no_harm, harm):
+    """The reverse swap (no-harm notes into the harm run): 0 = blame did not fall, 1 = the whole leak gone."""
+    return fraction_restored(patched, harm, no_harm)
+
+
+def softcap(score, cap):
+    """Gemma's squash: 30 x tanh(score / 30), so no score passes the cap. Works on a number or a tensor."""
+    return cap * (math.tanh(score / cap) if isinstance(score, (int, float)) else (score / cap).tanh())
 
 
 def gate(no_harm, harm):
@@ -221,6 +233,186 @@ def smoke():
     return passed == len(checks)
 
 
+def lens(model, notes):
+    """Logit lens: gemma's final reader (norm -> scores -> squash) on every row of notes, as gemma's own code does it."""
+    with torch.no_grad():
+        h = model.model.norm(notes.to(DEVICE, model.dtype))
+        scores = softcap(model.lm_head(h), model.config.final_logit_softcapping)
+    return torch.softmax(scores.float(), -1).cpu()
+
+
+COLORS = {"no_harm": "#2a78d6", "harm": "#eb6834"}  # blue / orange, colorblind-checked; a color = whose notes
+INK, MUTED, GRID = "#1f1f1e", "#6b6a64", "#e4e3de"
+
+
+def pictures(pngs, digits, view, curves):
+    """The PNGs named in pngs. Plain data in, so they can be drawn from made-up numbers or from a log.
+
+    digits[leg] = 10 probabilities, view[leg] = 27 (blame, digit mass) from the lens, curves[direction] = 27 fractions.
+    """
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    plt.rcParams.update({"font.size": 10, "text.color": INK, "axes.labelcolor": MUTED, "axes.edgecolor": GRID,
+                         "xtick.color": MUTED, "ytick.color": MUTED, "axes.spines.top": False,
+                         "axes.spines.right": False, "axes.grid": True, "grid.color": GRID,
+                         "grid.linewidth": 0.8, "axes.axisbelow": True, "legend.frameon": False})
+    label = {"no_harm": "no harm", "harm": "harm"}
+
+    def save(fig, ax, key, title, sub):
+        ax.set_title(f"{title}\n", loc="left", fontsize=12, fontweight="bold")
+        ax.text(0, 1.02, sub, transform=ax.transAxes, fontsize=9, color=MUTED)
+        fig.tight_layout()
+        fig.savefig(pngs[key], dpi=150, facecolor="white")
+        plt.close(fig)
+
+    # 1. what gemma thinks of each blame number, both legs side by side
+    if "digits" in pngs:
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        w = 0.38
+        for k, leg in enumerate(LEGS):
+            blame, _ = expected_blame(digits[leg])
+            ax.bar([d + (k - 0.5) * (w + 0.02) for d in DIGITS], digits[leg], w, color=COLORS[leg],
+                   label=f"{label[leg]} - expected blame {blame:.2f}")
+        ax.set(xticks=list(DIGITS), xlabel="blame number gemma could write next (0 = no blame at all)",
+               ylabel="probability", ylim=(0, 1))
+        ax.grid(axis="x", visible=False)
+        ax.legend(loc="upper left")
+        save(fig, ax, "digits", "Gemma's answer, before it writes it",
+             f"probability of each blame number for Dana's choice - {MODEL}")
+
+    rows = range(len(view["no_harm"] if view else curves["forward"]))
+    if "lens" in pngs:
+        # 2. logit lens: the answer read after every layer - only where the reader actually sees a number
+        readable = [L for L in rows if min(view[leg][L][1] for leg in LEGS) >= MASS_MIN]
+        fig, (ax, low) = plt.subplots(2, 1, figsize=(8, 6), sharex=True, gridspec_kw={"height_ratios": [2, 1]})
+        if readable and readable[0] > 0:
+            for a in (ax, low):
+                a.axvspan(-0.5, readable[0] - 0.5, color=GRID, alpha=0.5, linewidth=0)
+            ax.text((readable[0] - 1) / 2, 4.5, f"rows 0-{readable[0] - 1}: the reader sees no number yet\n"
+                    f"(digit mass < {MASS_MIN}) - blame here would be noise, so not drawn",
+                    ha="center", va="center", fontsize=9, color=MUTED)
+        for leg in LEGS:
+            ax.plot(readable, [view[leg][L][0] for L in readable], color=COLORS[leg], linewidth=2, marker="o",
+                    markersize=4, label=label[leg])
+            ax.annotate(f"{label[leg]} {view[leg][-1][0]:.2f}", (rows[-1], view[leg][-1][0]),
+                        xytext=(6, 0), textcoords="offset points", va="center", fontsize=9, color=INK)
+            low.plot(rows, [view[leg][L][1] for L in rows], color=COLORS[leg], linewidth=2, marker="o", markersize=3)
+        low.axhline(MASS_MIN, color=MUTED, linestyle=":", linewidth=1)
+        low.text(0, MASS_MIN, f" readable from {MASS_MIN}", va="bottom", fontsize=8, color=MUTED)
+        ax.set(ylabel="expected blame (0-9)", ylim=(0, 9))
+        low.set(xlabel="after layer (0 = before any layer, 26 = the real answer)", ylabel="digit mass",
+                ylim=(-0.05, 1.1), xlim=(-0.5, rows[-1] + 4), xticks=list(range(0, rows[-1] + 1, 5)))
+        ax.legend(loc="upper left")
+        save(fig, ax, "lens", "Logit lens - if gemma had to answer after this layer",
+             "a view, not a proof: early layers may hold the outcome in a form the final reader can't read")
+
+    if "patching" in pngs:
+        # 3. patching: what one swap of the last token's notes does to the leak
+        fig, ax = plt.subplots(figsize=(8, 4.5))
+        for direction, donor, marker, text in (("forward", "harm", "o", "forward: harm notes into no harm (restored)"),
+                                               ("reverse", "no_harm", "s", "reverse: no-harm notes into harm (removed)")):
+            ax.plot(rows, curves[direction], color=COLORS[donor], linewidth=2, marker=marker, markersize=4, label=text)
+        ax.axhline(ENTRY, color=MUTED, linestyle=":", linewidth=1)
+        ax.text(rows[-1], ENTRY, f"entry line {ENTRY}", ha="right", va="bottom", fontsize=8, color=MUTED)
+        ax.set(xlabel="notes swapped after layer (0 = before any layer)",
+               ylabel="fraction of the leak (0 = none, 1 = all)", ylim=(-0.15, 1.15))
+        ax.legend(loc="upper left")
+        save(fig, ax, "patching", "Activation patching - where the outcome reaches the answer",
+             "one swap at the last token; color = whose notes were put in")
+
+
+def patching(name):
+    """Step 1 (stop rules) -> logit lens -> step 2 patching, both directions. PNGs land next to the log."""
+    import transformers
+
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    pngs = {k: out / f"{name}-{k}.png" for k in ("digits", "lens", "patching")}
+    assert not any(p.exists() for p in pngs.values()), f"{pngs} exist - a run never overwrites, use a new name"
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype} | "
+          f"layers {len(model.model.layers)} | squash cap {model.config.final_logit_softcapping}")
+    dids = digit_ids(tok)
+    ids = {leg: encode(tok, user) for leg, user in prompts().items()}
+    rows = range(len(model.model.layers) + 1)
+
+    def blame(probs):
+        return expected_blame([probs[i].item() for i in dids])
+
+    print("\n== STEP 1. the leak (stop rules: |leak| < 0.3 or digit mass < 0.9 in either leg -> stop)")
+    base = {leg: run(model, ids[leg]) for leg in LEGS}
+    legs = {leg: blame(base[leg][1]) for leg in LEGS}
+    for leg in LEGS:
+        print(f"{leg:8s} expected blame {legs[leg][0]:.4f} | digit mass {legs[leg][1]:.4f}")
+    no_harm, harm = legs["no_harm"][0], legs["harm"][0]
+    print(f"leak = harm - no_harm = {harm - no_harm:+.4f}")
+    stop = gate(legs["no_harm"], legs["harm"])
+    if stop:
+        print("STEP 1 STOP: " + "; ".join(stop))
+        return True
+    print("STEP 1 GO: leak and digit mass pass both rules")
+
+    print("\n== LOGIT LENS. gemma's final reader on the notes after every layer (a view, not a proof)")
+    view = {leg: [blame(p) for p in lens(model, base[leg][0])] for leg in LEGS}
+    print("row | no_harm blame (mass) | harm blame (mass) | gap")
+    for L in rows:
+        (a, ma), (b, mb) = view["no_harm"][L], view["harm"][L]
+        print(f" {L:2d} | {a:7.4f} ({ma:.4f}) | {b:7.4f} ({mb:.4f}) | {b - a:+.4f}")
+    diff = max(abs(view[leg][-1][0] - legs[leg][0]) for leg in LEGS)
+    lens_ok = diff <= SANITY_TOL
+    print(f"check: lens at row 26 vs the real answer, largest difference {diff:.6f} -> "
+          f"{'PASS' if lens_ok else 'FAIL'} (tolerance {SANITY_TOL})")
+
+    print("\n== STEP 2. activation patching at the last token, every row (0 = before any layer, a control)")
+    # forward: harm notes into the no-harm run; reverse: no-harm notes into the harm run
+    curves = {}
+    for direction, into, donor, frac in (("forward", "no_harm", "harm", fraction_restored),
+                                         ("reverse", "harm", "no_harm", fraction_removed)):
+        word = "restored" if direction == "forward" else "removed"
+        print(f"\n-- {direction}: {donor} notes into the {into} run, fraction of the leak {word}")
+        print("row | patched blame | fraction | digit mass")
+        got = [blame(run(model, ids[into], (L, base[donor][0][L]))[1]) for L in rows]
+        fractions = [frac(b, no_harm, harm) for b, _ in got]
+        masses = [m for _, m in got]
+        for L in rows:
+            flag = "  FLAGGED (mass < 0.9)" if masses[L] < MASS_MIN else ""
+            print(f" {L:2d} | {got[L][0]:7.4f} | {fractions[L]:+.4f} | {masses[L]:.4f}{flag}")
+        entry, shape, flagged = read_curve(fractions, masses)
+        print(f"READ {direction}: entry row {entry} (first row with fraction >= {ENTRY}) | {shape} | "
+              f"flagged rows {flagged}")
+        print(f"controls: row 0 fraction {fractions[0]:+.4f} (should be 0) | "
+              f"row 26 fraction {fractions[-1]:+.4f} (should be 1)")
+        curves[direction] = fractions
+
+    digits = {leg: [base[leg][1][i].item() for i in dids] for leg in LEGS}
+    pictures(pngs, digits, view, curves)
+    print("\npictures: " + " | ".join(str(p) for p in pngs.values()))
+    return lens_ok
+
+
+def lens_from_log(name):
+    """Redraw the lens picture from a run's logged table, no model. Writes <name>-lens-readable.png next to the log."""
+    import re
+
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    row = re.compile(r"^\s*(\d+) \|\s+(\S+) \((\S+)\) \|\s+(\S+) \((\S+)\) \|")
+    lines = (out / f"{name}.log").read_text().split("== LOGIT LENS")[1].split("== STEP 2")[0].splitlines()
+    rows = [m.groups() for m in map(row.match, lines) if m]
+    assert [int(r[0]) for r in rows] == list(range(27)), f"expected lens rows 0-26 in the log, got {len(rows)}"
+    view = {"no_harm": [(float(r[1]), float(r[2])) for r in rows], "harm": [(float(r[3]), float(r[4])) for r in rows]}
+    png = out / f"{name}-lens-readable.png"
+    assert not png.exists(), f"{png} exists - never overwritten"
+    pictures({"lens": png}, None, view, None)
+    print(f"picture: {png}")
+    return True
+
+
 if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
-    sys.exit(0 if {"smoke": smoke}[sys.argv[1]]() else 1)
+    cmd = sys.argv[1]
+    sys.exit(0 if (smoke() if cmd == "smoke" else {"patching": patching, "lens-from-log": lens_from_log}[cmd](
+        sys.argv[2])) else 1)

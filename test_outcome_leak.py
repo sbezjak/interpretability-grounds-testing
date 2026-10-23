@@ -8,7 +8,9 @@ Runnable two ways:
 
 import math
 
-from outcome_leak import expected_blame, fraction_restored, gate, read_curve
+import torch
+
+from outcome_leak import expected_blame, fraction_removed, fraction_restored, gate, read_curve, softcap
 
 
 def one_hot(d, p=1.0):
@@ -58,6 +60,26 @@ def test_fraction_restored():
     assert close(fraction_restored(4.0, 5.0, 3.0), 0.5)
 
 
+def test_fraction_removed():
+    # the notes.md example: no harm 3.56, harm 6.28, harm run with no-harm notes drops to 4.00 -> 0.84 removed
+    assert close(fraction_removed(4.00, 3.56, 6.28), 2.28 / 2.72)
+    assert close(fraction_removed(6.28, 3.56, 6.28), 0.0)  # swap removed nothing
+    assert close(fraction_removed(3.56, 3.56, 6.28), 1.0)  # swap removed the whole leak
+
+
+def test_softcap():
+    # the notes.md table, worked by hand: 30 x tanh(score / 30)
+    assert softcap(0.0, 30.0) == 0.0
+    assert close(softcap(30.0, 30.0), 30 * math.tanh(1))  # 22.85
+    assert round(softcap(30.0, 30.0), 2) == 22.85
+    assert round(softcap(-30.0, 30.0), 2) == -22.85  # symmetric
+    assert round(softcap(3.0, 30.0), 2) == 2.99  # small scores barely move
+    assert round(softcap(100.0, 30.0), 2) == 29.92  # big ones never pass 30
+    # the same on a tensor - that is what the logit lens feeds it
+    out = softcap(torch.tensor([0.0, 30.0, 100.0]), 30.0)
+    assert [round(x, 2) for x in out.tolist()] == [0.0, 22.85, 29.92]
+
+
 def test_gate():
     assert gate((3.0, 0.95), (3.31, 0.95)) == []  # leak 0.31 -> go on
     assert gate((3.31, 0.95), (3.0, 0.95)) == []  # leak -0.31 -> go on too (two-sided)
@@ -83,7 +105,7 @@ def test_read_curve():
 
 
 if __name__ == "__main__":
-    tests = [test_expected_blame, test_fraction_restored, test_gate, test_read_curve]
+    tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

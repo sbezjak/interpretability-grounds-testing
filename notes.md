@@ -58,6 +58,79 @@ Repeat for every layer and you get a curve: where the outcome reaches the answer
 
 Like swapping one component from the failing build into the passing build to find where the bug lives.
 
+**Fraction restored** - how much of the leak one swap brought back. Say no harm gives 3.56, harm gives 6.28 (leak
+2.72), and no-harm with harm notes at layer 10 gives 5.40:
+
+    (5.40 - 3.56) / (6.28 - 3.56) = 1.84 / 2.72 = 0.68  ->  68% of the leak came back
+
+0 = the swap did nothing, 1 = it brought the whole leak.
+
+### The reverse direction
+
+The swap above asks: are the harm notes here **enough** to raise the blame? The reverse asks the other half: if I take
+the harm out here, does the blame **fall**?
+
+- Run the **harm** prompt.
+- At one layer, swap in the notes from the **no-harm** run, at the final token.
+- Read the expected blame. Same formula, legs swapped - the fraction of the leak removed:
+
+      (patched - harm) / (no_harm - harm)
+      blame drops to 4.00:  (4.00 - 6.28) / (3.56 - 6.28) = -2.28 / -2.72 = 0.84  ->  84% of the leak removed
+
+Why both: we only swap the notes at **one token** (the last one). The harm paragraph itself is still in the prompt, on
+earlier tokens, and later layers can read it again from there. So a swap can fail not because the outcome isn't in
+those notes, but because the model fetches it again a few layers later. Running both directions shows which.
+
+## A view along the way: the logit lens
+
+At the very end, the model does one fixed step: it takes the final notes and turns them into a score for every
+possible next token, then into probabilities. Call that step the **reader**. Normally it runs once, after layer 26.
+
+The logit lens runs the same reader on the notes after **every** layer: "if the model had to answer right now, after
+layer 14, what blame would it give?" Like printing a variable halfway through a pipeline instead of only the final
+output.
+
+A made-up example of what it looks like:
+
+| after layer | no harm | harm |
+|---|---|---|
+| 5 | 4.5 | 4.5 |
+| 14 | 4.1 | 5.0 |
+| 26 | 3.56 | 6.28 |
+
+Read: the outcome shows up in the answer from around layer 14 on.
+
+It is a **view, not a proof**. The reader was built for the final notes. Early layers may keep the information in a
+form the reader can't read yet, so a flat line early doesn't mean the information isn't there. It only watches - it
+changes nothing. Patching is the test that shows cause; the lens is a cheap picture to compare it with.
+
+One honesty check is built in: after layer 26 the lens IS the real answer, so the two must match.
+
+### The squash (gemma's score cap)
+
+Gemma's reader has one extra step: before turning scores into probabilities, it squashes every score so none can go
+past 30:
+
+    squashed = 30 x tanh(score / 30)
+
+`tanh` is a curve that is almost a straight line near 0 and flattens out towards 1. So small scores barely change and
+big ones get bent down:
+
+| score | squashed |
+|---|---|
+| 3 | 2.99 |
+| 10 | 9.65 |
+| 30 | 22.85 |
+| 100 | 29.92 |
+
+Why gemma does it: it's a safety rail Google added for training. Without a cap, a model can push one score far above
+the rest and become absurdly sure of itself - and huge numbers make training unstable. Two words scored 40 and 30:
+without the cap the winner gets 99.995%; squashed (26.10 vs 22.85) it gets 96%. The cap keeps the model from ever
+being *that* certain. It is part of how gemma was trained, so it is part of the model - not something we add.
+
+When the model runs normally it does this inside its own code. The logit lens re-does the reader by hand, so it has to
+do the squash too - or even its layer-26 reading would not match the real answer.
+
 ## Reading the result - same rule as my other repos
 
 - **Strong:** a clean effect you can switch on and off at a specific place, with the model still answering sensibly.
@@ -101,3 +174,6 @@ models.
 - **Hook** - a function attached to a layer that can read or replace its output.
 - **SAE (sparse autoencoder)** - a dictionary that splits a layer's notes into labelled features.
 - **Expected blame** - the probability-weighted average of the blame numbers.
+- **Fraction restored / removed** - how much of the leak one swap brought back (or took away): 0 = none, 1 = all.
+- **Logit lens** - running the model's final reader on the notes after every layer, to watch the answer form.
+- **Softcap (the squash)** - gemma's cap on scores, 30 x tanh(score / 30), so no score goes past 30.
