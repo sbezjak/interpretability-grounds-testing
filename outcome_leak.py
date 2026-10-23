@@ -6,6 +6,8 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py smoke              step 0 - look at the machinery, three honesty checks
     .venv/bin/python outcome_leak.py patching <name>    step 1 (stop rules) -> logit lens -> step 2, both directions
     .venv/bin/python outcome_leak.py lens-from-log <name>   redraw the lens picture from that run's log, no model
+    .venv/bin/python outcome_leak.py removal <name>     step 3 - take the outcome direction out, Riley and random checks
+    .venv/bin/python outcome_leak.py removal-from-log <name>   redraw the step 3 picture from that run's log, no model
 """
 
 import faulthandler
@@ -80,6 +82,58 @@ def read_curve(fractions, masses):
     return entry, "sharp" if sharp else "gradual", flagged
 
 
+# step 3, take the leak out (agreed 2026-10-23, before the run)
+GAP_MIN = 0.3  # Riley careless - careful under this at baseline = grounds check unreadable -> stop
+SHRINK_MIN = 0.5  # taken out = Dana's leak shrinks by at least this
+KEEP_MIN = 0.8  # grounds kept = Riley's gap keeps at least this, at the same row
+CONTROL_MAX = 0.1  # a random direction must move Dana's leak by less than this
+
+
+def unit(v):
+    """v scaled to length 1 - which way, not how much. None if v is all zeros: there is no way to point."""
+    n = v.norm()
+    return None if n == 0 else v / n
+
+
+def outcome_direction(diffs):
+    """The average of the build cases' (harm - no_harm) notes, length 1 - the outcome direction u."""
+    return unit(sum(diffs) / len(diffs))
+
+
+def remove(h, u):
+    """h without its part along u: h - (h . u) u. u = None (no direction) leaves h as it is."""
+    return h if u is None else h - (h @ u) * u
+
+
+def cosine(a, b):
+    """How alike two directions are: 1 = the same way, 0 = unrelated, -1 = opposite. nan if either is all zeros."""
+    ua, ub = unit(a), unit(b)
+    return math.nan if ua is None or ub is None else (ua @ ub).item()
+
+
+def shrink(before, after):
+    """How much of a leak (or gap) the removal took away: 0 = none, 1 = all of it, over 1 = it flipped sign."""
+    return 1 - after / before
+
+
+def riley_gate(careful, careless):
+    """Step 3 gate. Each leg is (expected blame, digit mass). Returns the stop reasons; empty = go on."""
+    gap = careless[0] - careful[0]
+    return [f"Riley gap careless - careful {gap:.3f} < {GAP_MIN}"] if gap < GAP_MIN else []
+
+
+def read_removal(shrinks, masses, kept, riley_masses, moves):
+    """Lines 3-5 per row: Dana's leak shrinks >= 0.5 with both legs' digit mass >= 0.9 (taken out), Riley's gap
+    keeps >= 0.8 with both legs' digit mass >= 0.9 (grounds kept), the random direction moves Dana's leak by < 0.1
+    (control). masses / riley_masses = the lower of that case's two legs.
+
+    Returns (rows taken out, rows taken out + grounds kept, rows where all three hold).
+    """
+    out = [L for L, (s, m) in enumerate(zip(shrinks, masses)) if s >= SHRINK_MIN and m >= MASS_MIN]
+    grounds = [L for L in out if kept[L] >= KEEP_MIN and riley_masses[L] >= MASS_MIN]
+    return out, grounds, [L for L in grounds if abs(moves[L]) < CONTROL_MAX]
+
+
 # ------------------------------------------------------------------------------------------------ the model
 
 import torch  # noqa: E402 - below the logic on purpose: the canned test reads the top half first
@@ -92,15 +146,15 @@ LEGS = ("no_harm", "harm")
 SANITY_TOL = 1e-3  # an honesty check passes if expected blame moves by at most this (fixed before the smoke)
 
 
-def prompts():
-    """The two Dana prompts: leg + question + answer format, joined as moral-luck-02 did, 0-10 -> 0-9."""
+def prompts(key="A"):
+    """One case's prompts (A = Dana): leg + question + answer format, joined as moral-luck-02 did, 0-10 -> 0-9."""
     fx = json.loads(FIXTURE.read_text())
-    case = fx["cases"]["A"]
+    case = fx["cases"][key]
     contract = fx["output_contract"]
     assert contract.count(" to 10") == 2, "the 0-10 scale should appear exactly twice"
     contract = contract.replace(" to 10", " to 9")
     question = fx["question"].format(name=case["name"])
-    return {leg: "\n\n".join([case["legs"][leg], question, contract.format(name=case["name"])]) for leg in LEGS}
+    return {leg: "\n\n".join([text, question, contract.format(name=case["name"])]) for leg, text in case["legs"].items()}
 
 
 def load():
@@ -411,8 +465,146 @@ def lens_from_log(name):
     return True
 
 
+CASES = {"Sam": "B", "Alex": "C", "Dana": "A", "Riley": "D"}  # Sam + Alex build the direction, Dana is held out
+
+
+def removal(name):
+    """Step 3: take the outcome direction (built from Sam and Alex) out of the last token's notes, one row at a time.
+
+    Every run gets the removal at that row: Dana both legs, Riley both legs, and Dana with a random direction.
+    """
+    import transformers
+
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    png = out / f"{name}.png"
+    assert not png.exists(), f"{png} exists - a run never overwrites, use a new name"
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype} | "
+          f"layers {len(model.model.layers)}")
+    dids = digit_ids(tok)
+    rows = range(len(model.model.layers) + 1)
+
+    def blame(probs):
+        return expected_blame([probs[i].item() for i in dids])
+
+    print("\n== BASELINE. every case, both legs, nothing removed")
+    ids, base = {}, {}
+    for who, key in CASES.items():
+        for leg, user in prompts(key).items():
+            ids[who, leg] = encode(tok, user)
+            base[who, leg] = run(model, ids[who, leg])
+            b, m = blame(base[who, leg][1])
+            print(f"{who:5s} {leg:8s} {ids[who, leg].shape[1]:3d} tokens | expected blame {b:.4f} | digit mass {m:.4f}")
+    legs = {k: blame(v[1]) for k, v in base.items()}
+    for who in ("Sam", "Alex"):
+        print(f"{who} leak = harm - no_harm = {legs[who, 'harm'][0] - legs[who, 'no_harm'][0]:+.4f} (information only)")
+    leak = legs["Dana", "harm"][0] - legs["Dana", "no_harm"][0]
+    gap = legs["Riley", "careless"][0] - legs["Riley", "careful"][0]
+    print(f"Dana leak = harm - no_harm = {leak:+.4f}")
+    print(f"Riley gap = careless - careful = {gap:+.4f}")
+    stop = gate(legs["Dana", "no_harm"], legs["Dana", "harm"]) + riley_gate(legs["Riley", "careful"],
+                                                                         legs["Riley", "careless"])
+    if stop:
+        print("GATE STOP: " + "; ".join(stop))
+        return True
+    print("GATE GO: Dana leaks with number answers, Riley has a real gap")
+
+    def diff(who, a, b, L):
+        return base[who, b][0][L] - base[who, a][0][L]
+
+    random_u = unit(torch.randn(model.config.hidden_size, generator=torch.Generator().manual_seed(0)))
+    print("random control direction: seed 0, standard normal, length 1")
+
+    print("\n== REMOVAL at the last token, one row at a time (row 0 = before any layer: no direction there)")
+    print("cos = similarity of the Sam+Alex direction to Dana's own difference | Sam~Alex = their two differences")
+    print("row |   cos  | Sam~Alex | Dana leak  shrink  mass | Riley gap  kept  mass | random leak  move | holds")
+    shrinks, masses, kept, riley_masses, moves = [], [], [], [], []
+    for L in rows:
+        u = outcome_direction([diff("Sam", "no_harm", "harm", L), diff("Alex", "no_harm", "harm", L)])
+
+        def removed(who, leg, direction):
+            return blame(run(model, ids[who, leg], (L, remove(base[who, leg][0][L], direction)))[1])
+
+        d = {leg: removed("Dana", leg, u) for leg in ("no_harm", "harm")}
+        r = {leg: removed("Riley", leg, u) for leg in ("careful", "careless")}
+        c = {leg: removed("Dana", leg, random_u) for leg in ("no_harm", "harm")}
+        leak_after = d["harm"][0] - d["no_harm"][0]
+        gap_after = r["careless"][0] - r["careful"][0]
+        control_after = c["harm"][0] - c["no_harm"][0]
+        shrinks.append(shrink(leak, leak_after))
+        masses.append(min(m for _, m in d.values()))
+        kept.append(gap_after / gap)
+        riley_masses.append(min(m for _, m in r.values()))
+        moves.append(shrink(leak, control_after))
+        holds = L in read_removal(shrinks, masses, kept, riley_masses, moves)[2]
+        print(f" {L:2d} | {cosine(u, diff('Dana', 'no_harm', 'harm', L)) if u is not None else math.nan:+.3f} | "
+              f"{cosine(diff('Sam', 'no_harm', 'harm', L), diff('Alex', 'no_harm', 'harm', L)):+.3f}  | "
+              f"{leak_after:+.4f} {shrinks[-1]:+.3f} {masses[-1]:.3f} | "
+              f"{gap_after:+.4f} {kept[-1]:+.3f} {riley_masses[-1]:.3f} | "
+              f"{control_after:+.4f} {moves[-1]:+.3f} | {'ALL THREE' if holds else '-'}")
+
+    taken, grounds, all_three = read_removal(shrinks, masses, kept, riley_masses, moves)
+    print(f"\nREAD line 3, taken out (shrink >= {SHRINK_MIN}, Dana mass >= {MASS_MIN}): rows {taken}")
+    print(f"READ line 4, + grounds kept (Riley keeps >= {KEEP_MIN}, Riley mass >= {MASS_MIN}): rows {grounds}")
+    print(f"READ line 5, + control (random moves < {CONTROL_MAX}): rows {all_three}")
+    print(f"largest random move over all rows: {max(moves, key=abs):+.3f} | largest shrink: {max(shrinks):+.3f} "
+          f"at row {shrinks.index(max(shrinks))}")
+
+    removal_picture(png, shrinks, kept, moves)
+    print(f"\npicture: {png}")
+    return True
+
+
+def removal_picture(png, shrinks, kept, moves):
+    """The step 3 curves per row. Plain data in, so the picture can be redrawn from a log."""
+    import matplotlib
+
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+
+    rows = range(len(shrinks))
+    fig, ax = plt.subplots(figsize=(8, 5.2))
+    ax.plot(rows, shrinks, color=COLORS["harm"], linewidth=2, marker="o", markersize=4,
+            label="Dana's leak taken out (should rise)")
+    ax.plot(rows, kept, color=COLORS["no_harm"], linewidth=2, marker="s", markersize=4,
+            label="Riley's gap kept (should stay near 1)")
+    ax.plot(rows, moves, color=MUTED, linewidth=1.5, linestyle="--", label="random direction: leak moved (should stay 0)")
+    for y, text in ((SHRINK_MIN, "taken out line"), (KEEP_MIN, "kept line")):
+        ax.axhline(y, color=MUTED, linestyle=":", linewidth=1)
+        ax.text(rows[-1], y, text, ha="right", va="bottom", fontsize=8, color=MUTED)
+    ax.set(xlabel="direction removed after layer (0 = before any layer)", ylabel="fraction (0 = none, 1 = all)")
+    # legend under the plot, so it never covers a curve
+    ax.legend(loc="upper left", bbox_to_anchor=(0, -0.15), ncol=2, frameon=False, fontsize=9)
+    ax.set_title("Taking the outcome direction out - built from Sam and Alex, tested on Dana\n", loc="left",
+                 fontsize=12, fontweight="bold")
+    ax.text(0, 1.02, f"one removal at the last token per run - {MODEL}", transform=ax.transAxes, fontsize=9,
+            color=MUTED)
+    fig.tight_layout()
+    fig.savefig(png, dpi=150, facecolor="white")
+    plt.close(fig)
+
+
+def removal_from_log(name):
+    """Redraw the step 3 picture from a run's logged table, no model. Writes <name>-redrawn.png next to the log."""
+    import re
+
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    # row | cos | Sam~Alex | Dana leak shrink mass | Riley gap kept mass | random leak move | holds
+    row = re.compile(r"^\s*(\d+) \|.*?\|.*?\| \S+ (\S+) \S+ \| \S+ (\S+) \S+ \| \S+ (\S+) \|")
+    lines = (out / f"{name}.log").read_text().split("== REMOVAL")[1].split("READ line 3")[0].splitlines()
+    rows = [m.groups() for m in map(row.match, lines) if m]
+    assert [int(r[0]) for r in rows] == list(range(27)), f"expected removal rows 0-26 in the log, got {len(rows)}"
+    png = out / f"{name}-redrawn.png"
+    assert not png.exists(), f"{png} exists - never overwritten"
+    removal_picture(png, *([float(r[i]) for r in rows] for i in (1, 2, 3)))
+    print(f"picture: {png}")
+    return True
+
+
 if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
-    sys.exit(0 if (smoke() if cmd == "smoke" else {"patching": patching, "lens-from-log": lens_from_log}[cmd](
-        sys.argv[2])) else 1)
+    sys.exit(0 if (smoke() if cmd == "smoke" else {"patching": patching, "lens-from-log": lens_from_log,
+                                                   "removal": removal, "removal-from-log": removal_from_log}[cmd](sys.argv[2])) else 1)

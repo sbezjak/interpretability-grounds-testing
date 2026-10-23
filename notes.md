@@ -140,7 +140,7 @@ reader can't see it - like a draft in someone's private shorthand: the content i
 knows the final language reads nothing until it's written out. With the lens alone we'd have said "the outcome
 arrives at 23" - wrong. That's why patching is the test and the lens only a view.
 
-## Step 3 - take the leak out (planned)
+## Step 3 - take the leak out
 
 The reverse swap removed about 80% of the leak, but it cheated: it copied in *all* of the no-harm notes. Taking the
 leak out means removing **only the outcome** and leaving everything else alone.
@@ -225,6 +225,74 @@ direction, 0 = unrelated) - a quick look at whether the three stories share an "
 Caveat: two cases make a weak direction. If it works anyway, that's strong; if it fails, it's the weak kind of null -
 maybe two weren't enough.
 
+Settled just before the run, also before any numbers: line 4 also needs Riley's digit mass at least 0.9 (if Riley
+stops answering with a number, "kept" is noise); a layer counts only if lines 3, 4 and 5 all hold at that **same**
+layer; the random direction is one direction, drawn with a fixed seed (0).
+
+### What the run showed (dana-outcome-removal-gemma-2-2b-it)
+
+Before removing anything: Dana leaks **2.72** (the same as the patching run), Riley's real gap is **3.44** (careful
+3.06, careless 6.50), so the gate passed. Sam and Alex leak too (1.10 and 1.25) - the direction is built from two
+real leaks.
+
+Then the direction comes out, one layer at a time:
+
+| removed after layer | Dana's leak | taken out | Riley's gap kept | random direction moved the leak |
+|---|---|---|---|---|
+| 0-14 | about 2.7 | about 0 (within 0.09) | about 100% | under 5% |
+| 15 | 2.23 | 18% | 105% | 1% |
+| **17** | **1.23** | **55%** | **98%** | **0%** |
+| 19 | 0.82 | 70% | 80.5% | 2% |
+| 22 | 0.55 | 80% | 59% | 2% |
+| 26 | 0.52 | 81% | 40% | 1% |
+
+All three lines hold at layers **17, 18, 19 and 20**. Gemma kept answering with a number everywhere (digit mass 1.000).
+The picture: `evidence/raw-logs/dana-outcome-removal-gemma-2-2b-it-redrawn.png` (the run's own PNG has the legend
+over Riley's line; redrawn from the log with `outcome_leak.py removal-from-log`).
+
+Reading it in three parts:
+
+- **Layers 0-14: nothing.** The outcome isn't in the last token's notes yet, or not in a form Sam, Alex and Dana share.
+  Fits patching (the outcome arrives at about layer 15).
+- **Layers 15-20: the leak comes out, Riley's gap stays.** This is where the direction removes the outcome and leaves
+  the choice alone. Layer 17 is the cleanest; at 19-20 Riley only just clears the line (80.5%, 80.1%).
+- **Layers 21-26: more leak comes out, but Riley's gap goes too.** A reading, not tested: late in the model,
+  "harm minus no harm" turns into "write a higher number" in general, so removing it lowers blame for any reason -
+  including Riley's real one.
+
+The three stories do share something: Sam's and Alex's differences are almost unrelated at layer 8 (cosine 0.08) and
+nearly the same direction at layer 26 (0.93); Dana's own difference lines up with their average at 0.82 by layer 19.
+
+### What this means - and what it is not (yet)
+
+In gemma, "the careless choice ended in harm" travels along **one shared direction**, and that direction is what
+pushes Dana's blame up. Shared: built from a nurse and an engineer, it works on a driver. Specific: a random direction
+does nothing, and the real ground (Riley) survives where the leak comes out.
+
+It is **not a repaired model yet**. Each run was plain gemma; a hook stepped in once, after one layer, at the last
+token. A "removed model" means that hook switched on for every run - the next steps test whether it holds up.
+
+Limits: two build cases; about a third of the leak survives a one-token removal (re-read from earlier tokens, as
+the reverse patching suggested); a claim about gemma-2-2b-it only.
+
+### Next (agreed with Sara 2026-10-23)
+
+Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call.
+
+- **a) Make it sturdier** (fast, about one run). Remove the direction at **every token**, not only the last - does the
+  leftover third go too? And **several random directions** (different seeds), so the control does not rest on one.
+  Lines agreed before building.
+- **b) Eval awareness** - the second planned check (below). Prior-art check first.
+- **c) The removed model on new cases.** The cases: `moral-luck-06-sep` in `../judge-outcome-bias-probe` - E Jesse
+  (dog off the leash in a park), F Kai (skips the forklift brake test), G Quinn (emails customer bank data
+  unencrypted). Checked: same question and answer format as moral-luck-02, and its cases A-D have the same legs, so
+  E-G make prompts exactly the way Dana's are made. Not yet known whether gemma leaks on them - measure first, a
+  case that doesn't leak is no test. The layer is fixed before seeing any new numbers (proposal: 17, the cleanest).
+  Read three things: the choice-blame leak should shrink; Riley's gap should stay; **BLAME-FOR-HARM and LIABILITY
+  should still move with the outcome** - the fixture says those may legitimately depend on it. If they go flat too,
+  we made gemma blind to outcomes, not removed a bias. Those two come later in gemma's answer, so the hook has to act
+  at every token gemma writes (it reuses a's every-token removal).
+
 ## Reading the result - same rule as my other repos
 
 - **Strong:** a clean effect you can switch on and off at a specific place, with the model still answering sensibly.
@@ -271,3 +339,6 @@ models.
 - **Fraction restored / removed** - how much of the leak one swap brought back (or took away): 0 = none, 1 = all.
 - **Logit lens** - running the model's final reader on the notes after every layer, to watch the answer form.
 - **Softcap (the squash)** - gemma's cap on scores, 30 x tanh(score / 30), so no score goes past 30.
+- **Direction** - a way to point in the space of the notes; here the average of harm-minus-no-harm, length 1.
+- **Removal (directional ablation)** - subtracting the part of the notes that points along a direction: h - (h · u) u.
+- **Cosine** - how alike two directions are: 1 = the same way, 0 = unrelated.

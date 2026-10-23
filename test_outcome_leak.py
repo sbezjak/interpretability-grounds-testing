@@ -10,7 +10,10 @@ import math
 
 import torch
 
-from outcome_leak import expected_blame, fraction_removed, fraction_restored, gate, read_curve, softcap
+from outcome_leak import (
+    cosine, expected_blame, fraction_removed, fraction_restored, gate, outcome_direction, read_curve, read_removal,
+    remove, riley_gate, shrink, softcap,
+)
 
 
 def one_hot(d, p=1.0):
@@ -104,8 +107,71 @@ def test_read_curve():
     )
 
 
+def vec(*xs):
+    return torch.tensor(xs, dtype=torch.float64)  # exact enough for the 1e-9 check
+
+
+def test_outcome_direction():
+    # the notes.md toy, notes of 3 numbers [outcome, child-and-car stuff, hospital-or-code stuff]
+    sam, alex = vec(1.0, 0.0, 0.6), vec(1.0, 0.0, -0.4)
+    u = outcome_direction([sam, alex])
+    # average [1.0, 0.0, 0.1], length sqrt(1.01) = 1.00499 -> [0.99504, 0, 0.09950]
+    assert torch.allclose(u, vec(1.0, 0.0, 0.1) / math.sqrt(1.01))
+    assert close(u.norm().item(), 1.0)  # length 1: only which way
+    # Dana's own difference [1.0, 0.8, 0.0]: cosine = 0.99504 / sqrt(1.64) = 0.777 - alike, not the same
+    assert round(cosine(u, vec(1.0, 0.8, 0.0)), 3) == 0.777
+    assert close(cosine(sam, sam), 1.0) and close(cosine(sam, -sam), -1.0)
+    # row 0: the last token is the same in every leg, so the differences are all zeros -> no direction
+    assert outcome_direction([vec(0, 0, 0), vec(0, 0, 0)]) is None
+    assert math.isnan(cosine(vec(0, 0, 0), sam))
+
+
+def test_remove():
+    # the notes.md table, u = the outcome slider [1, 0, 0]
+    u = vec(1.0, 0.0, 0.0)
+    assert torch.allclose(remove(vec(2.0, 0.8, 0.3), u), vec(0.0, 0.8, 0.3))  # Dana harm: 2.0 along u -> 0
+    assert torch.allclose(remove(vec(1.0, 0.0, 0.3), u), vec(0.0, 0.0, 0.3))  # Dana no harm: 1.0 along u -> 0
+    # with the real toy u (not rounded): nothing is left along u, and the rest is untouched
+    u = outcome_direction([vec(1.0, 0.0, 0.6), vec(1.0, 0.0, -0.4)])
+    h = vec(2.0, 0.8, 0.3)
+    after = remove(h, u)
+    assert close((after @ u).item(), 0.0)
+    assert close(after[1].item(), 0.8)  # the child-and-car number does not point along u
+    # h . u = (2.0 + 0.03) / 1.00499 = 2.01993; after = h - 2.01993 x u = [-0.0099, 0.8, 0.0990]
+    assert torch.allclose(after, vec(2.0 - 2.03 / 1.01, 0.8, 0.3 - 0.203 / 1.01))
+    assert remove(h, None) is h  # no direction (row 0) -> notes unchanged
+
+
+def test_shrink_and_rules():
+    # the notes.md "read three things" table: Dana leak 2.72 -> 0.4 = 85% removed
+    assert round(shrink(2.72, 0.4), 2) == 0.85
+    assert close(shrink(2.72, 2.72), 0.0) and close(shrink(2.72, 0.0), 1.0)
+    assert round(shrink(2.72, -0.272), 2) == 1.1  # the leak flipped: more than all of it removed
+    # Riley gap 4.0 -> 3.6 keeps 90% (good), -> 0.4 keeps 10% (judgment broken)
+    assert round(1 - shrink(4.0, 3.6), 2) == 0.9 and round(1 - shrink(4.0, 0.4), 2) == 0.1
+    # gate: Riley careful 2.0, careless 6.0 -> gap 4.0, go on; gap 0.2 -> stop
+    assert riley_gate((2.0, 0.95), (6.0, 0.95)) == []
+    assert riley_gate((2.0, 0.95), (2.2, 0.95)) == ["Riley gap careless - careful 0.200 < 0.3"]
+    assert riley_gate((6.0, 0.95), (2.0, 0.95)) != []  # careless blamed LESS than careful -> no real gap either
+    # rows 0-6, worked by hand:
+    #   row 0: shrink 0.0                                  -> not taken out
+    #   row 1: shrink 0.6, but Dana digit mass 0.5         -> not taken out (not answering with a number)
+    #   row 2: shrink 0.6, Riley keeps 0.5                 -> taken out, grounds broken
+    #   row 3: shrink 0.6, Riley keeps 0.9, random 0.15    -> taken out + kept, control fails
+    #   row 4: shrink 0.85, Riley keeps 0.9, random -0.05  -> all three hold
+    #   row 5: shrink 0.5 exactly, keeps 0.8 exactly, both masses 0.9 exactly, random 0.0 -> all three hold (>=)
+    #   row 6: shrink 0.85, Riley keeps 0.9, but Riley digit mass 0.5 -> taken out, "kept" unreadable
+    shrinks = [0.0, 0.6, 0.6, 0.6, 0.85, 0.5, 0.85]
+    masses = [0.95, 0.5, 0.95, 0.95, 0.95, 0.9, 0.95]
+    kept = [1.0, 1.0, 0.5, 0.9, 0.9, 0.8, 0.9]
+    riley_masses = [0.95, 0.95, 0.95, 0.95, 0.95, 0.9, 0.5]
+    moves = [0.0, 0.0, 0.0, 0.15, -0.05, 0.0, 0.0]
+    assert read_removal(shrinks, masses, kept, riley_masses, moves) == ([2, 3, 4, 5, 6], [3, 4, 5], [4, 5])
+
+
 if __name__ == "__main__":
-    tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve]
+    tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
+             test_outcome_direction, test_remove, test_shrink_and_rules]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")
