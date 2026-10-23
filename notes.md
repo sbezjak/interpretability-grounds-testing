@@ -310,9 +310,58 @@ Three things in the picture (`dana-outcome-removal-alltokens-gemma-2-2b-it-every
   the last token's notes become the answer, so the other tokens no longer matter. A free consistency check.
 - **Late layers as before:** more leak out (up to 86%), but Riley's gap goes too.
 
+### Step c - fixed gemma on new cases (outcome-removed-new-cases-gemma-2-2b-it)
+
+**Fixed gemma** = plain gemma with one hook on for the whole answer: after layer 17, the Sam + Alex direction comes out
+of every token - the prompt's and each one gemma writes. Chosen from step a before any new numbers (70% out, Riley 92%).
+
+**Three reads per story**, all from gemma's own probabilities: choice blame (as before); harm blame after
+`BLAME-FOR-HARM: `, once gemma has written its own top choice digit; liability = how likely gemma writes
+`OWES-COMPENSATION` rather than `OWES-NOTHING` (each phrase's token probabilities multiplied, then compared).
+
+**New cases** from `moral-luck-06-sep` (copied verbatim into `fixtures/`): Jesse (dog off the leash), Kai (skips the
+forklift brake test), Quinn (emails bank data unencrypted). The choice is the same in both stories, so the choice
+blame should not move; but harm blame and liability **may** - in the harm story there is a harm, and someone owes for it.
+
+**Line 4, clarified after the smoke (Sara, before the run):** the smoke showed Kai's leak *flip* (+0.55 -> -0.35). A
+flipped leak is still the outcome moving the choice blame, so "taken out" = at most **half of the leak left, by
+size**. Decided after seeing Kai's preview - so it was not a blind choice; it matches the fixture's two-sided rule.
+
+What came out (fixed gemma reproduced step a exactly; Riley's gap kept 92%):
+
+| case | choice leak, plain -> fixed | left | harm-blame gap kept | liability gap kept | random, largest | verdict |
+|---|---|---|---|---|---|---|
+| Quinn | -0.14 | | | | | dropped - gemma doesn't leak |
+| **Jesse** | 1.19 -> 0.11 | **9%** | 86% | 95% | 7.7% | **leak out + outcome kept** |
+| Kai | 0.55 -> -0.35 | 63% | 94% | 96% | 29% | leak not out |
+| Dana | 2.72 -> 0.82 | 30% | 86% | **78%** | 3.1% | leak out, liability just under the line |
+
+- **Jesse** is the strongest result so far: the direction never saw a dog, a park or a child, and on this brand-new
+  story it took the bias out while gemma still saw the child was hurt and that Jesse owes.
+- **Kai** fails twice: the leak flipped, and one random direction moved it 29%. Kai's leak is small (0.55), and random
+  directions move any leak by about 0.1-0.16 blame points - so a 10% line on a small leak sits in the noise. A lesson
+  for next time, not a rule changed after the fact.
+- **Dana**: the leak is out, but liability keeps 78% - just under 80%.
+
+Two patterns:
+
+- **The fix works by raising blame for the lucky story**, not lowering it for the unlucky one. Choice blame in the
+  no-harm story: Jesse 4.71 -> 5.99, Kai 5.83 -> 6.46, Dana 3.56 -> 5.34; the harm story barely moves. Dana's no-harm
+  answer goes from `2`, "a momentary lapse in judgment, not a reckless act" to `7`, "a clear violation of safety
+  rules". A reading, not tested: in gemma the leak is mostly **leniency when nothing went wrong**.
+- **The direction also carries a bit of the legitimate "no harm, so owes nothing".** P(owes) in the no-harm story
+  rises with the direction out: Jesse 0.02 -> 0.06, Kai 0.04 -> 0.07, Dana 0.04 -> 0.25, Quinn 0.20 -> 0.53 (Quinn's
+  fixed answer even writes OWES-COMPENSATION although nothing happened - information only, Quinn was not tested).
+  That's the "blind to outcomes" side effect the test was built to catch, showing up in part.
+
+**What it means:** the direction carries over - on one fully new story it removed the bias and kept what should
+depend on the outcome. But it is not a clean fix: it fails on Kai, and on Dana it costs some of the liability
+judgment. One direction holds most of the moral luck, tangled with a bit of what liability rightly uses. Two tested
+new stories (Quinn doesn't leak) are examples, not a rate. About gemma-2-2b-it only.
+
 ### Next (agreed with Sara 2026-10-23)
 
-Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a is done** (above).
+Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a and c are done** (above).
 
 - **a) Make it sturdier** (fast, about one run). Remove the direction at **every token**, not only the last - does the
   leftover third go too? And **several random directions** (different seeds), so the control does not rest on one.

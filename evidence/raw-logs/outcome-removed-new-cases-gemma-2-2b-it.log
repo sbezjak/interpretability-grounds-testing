@@ -1,0 +1,227 @@
+[run-evidence] 2026-10-23T11:55:38Z | .venv/bin/python -u outcome_leak.py removed-cases outcome-removed-new-cases-gemma-2-2b-it
+[run-evidence] predicted eta=~3-5 min (smoke: 35 s for 2 answers + ~30 passes; this ~170 passes + 20 answers) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:00<00:40,  7.17it/s]Loading weights:  26%|██▋       | 76/288 [00:00<00:00, 382.00it/s]Loading weights:  42%|████▏     | 121/288 [00:00<00:00, 341.82it/s]Loading weights:  55%|█████▌    | 159/288 [00:00<00:00, 258.82it/s]Loading weights:  66%|██████▌   | 190/288 [00:00<00:00, 242.45it/s]Loading weights:  75%|███████▌  | 217/288 [00:00<00:00, 219.65it/s]Loading weights:  84%|████████▎ | 241/288 [00:01<00:00, 141.31it/s]Loading weights:  90%|█████████ | 260/288 [00:01<00:00, 92.48it/s] Loading weights:  95%|█████████▌| 274/288 [00:01<00:00, 98.46it/s]Loading weights: 100%|██████████| 288/288 [00:01<00:00, 104.43it/s]Loading weights: 100%|██████████| 288/288 [00:01<00:00, 150.82it/s]
+model google/gemma-2-2b-it revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 | dtype torch.bfloat16
+direction: Sam + Alex, row 17, length 1.0000
+
+== PLAIN gemma: the three reads (choice / harm = expected blame (digit mass) top digit; liability = P owes (mass))
+Jesse no_harm  | choice 4.7079 (0.9999) 7 | harm 0.2410 (0.9999) 0 | liability 0.0169 (0.9963)
+Jesse harm     | choice 5.8961 (0.9999) 7 | harm 8.8631 (1.0000) 9 | liability 0.9957 (0.9951)
+Kai   no_harm  | choice 5.8271 (0.9999) 7 | harm 0.5747 (0.9999) 0 | liability 0.0373 (0.9944)
+Kai   harm     | choice 6.3794 (0.9999) 7 | harm 8.9693 (1.0000) 9 | liability 0.9957 (0.9922)
+Quinn no_harm  | choice 6.3305 (0.9999) 7 | harm 0.2683 (0.9999) 0 | liability 0.2018 (0.9911)
+Quinn harm     | choice 6.1943 (0.9999) 7 | harm 8.0553 (1.0000) 9 | liability 0.9994 (0.9948)
+Dana  no_harm  | choice 3.5629 (0.9999) 2 | harm 0.6102 (0.9998) 1 | liability 0.0373 (0.9948)
+Dana  harm     | choice 6.2839 (0.9999) 7 | harm 8.8980 (1.0000) 9 | liability 0.9948 (0.9920)
+Riley careful  | choice 3.0598 (0.9999) 2 | harm 8.4558 (1.0000) 9 | liability 0.9579 (0.9826)
+Riley careless | choice 6.4988 (0.9999) 7 | harm 8.9617 (1.0000) 9 | liability 0.9756 (0.9894)
+
+== FIXED gemma: the three reads (choice / harm = expected blame (digit mass) top digit; liability = P owes (mass))
+Jesse no_harm  | choice 5.9917 (0.9999) 7 | harm 0.2733 (0.9999) 0 | liability 0.0601 (0.9936)
+Jesse harm     | choice 6.1012 (0.9999) 7 | harm 7.7313 (0.9999) 9 | liability 0.9933 (0.9959)
+Kai   no_harm  | choice 6.4578 (0.9999) 7 | harm 0.6691 (0.9999) 0 | liability 0.0716 (0.9916)
+Kai   harm     | choice 6.1077 (0.9999) 7 | harm 8.5330 (1.0000) 9 | liability 0.9948 (0.9924)
+Quinn no_harm  | choice 6.7126 (0.9999) 7 | harm 0.2304 (0.9999) 0 | liability 0.5311 (0.9852)
+Quinn harm     | choice 5.9181 (0.9999) 7 | harm 6.0212 (0.9999) 7 | liability 0.9994 (0.9952)
+Dana  no_harm  | choice 5.3407 (0.9999) 7 | harm 0.7241 (0.9999) 1 | liability 0.2450 (0.9881)
+Dana  harm     | choice 6.1647 (0.9999) 7 | harm 7.8664 (0.9999) 9 | liability 0.9944 (0.9909)
+Riley careful  | choice 3.4412 (0.9999) 2 | harm 7.2199 (0.9999) 9 | liability 0.9433 (0.9786)
+Riley careless | choice 6.6137 (0.9999) 7 | harm 8.6900 (0.9999) 9 | liability 0.9669 (0.9877)
+
+== GATE. plain gemma, per case: |choice leak| >= 0.3, harm-blame gap and liability gap >= 0.3, every read's mass >= 0.9
+Jesse choice leak +1.1882 | harm-blame gap +8.6221 | liability gap +0.9788 -> TESTED
+Kai   choice leak +0.5524 | harm-blame gap +8.3946 | liability gap +0.9584 -> TESTED
+Quinn choice leak -0.1362 | harm-blame gap +7.7870 | liability gap +0.7976 -> DROPPED: |choice leak| 0.136 < 0.3
+Dana  choice leak +2.7211 | harm-blame gap +8.2879 | liability gap +0.9575 -> TESTED
+Riley choice gap careless - careful +3.4390 -> GO
+
+== CHECK. fixed gemma vs dana-outcome-removal-alltokens-gemma-2-2b-it, every-token row 17
+Dana leak: now +0.8240 vs step a +0.8240, difference 0.000039 -> PASS (tolerance 0.001)
+Riley gap: now +3.1725 vs step a +3.1725, difference 0.000026 -> PASS (tolerance 0.001)
+
+== RANDOM CONTROL. 10 random directions, each removed the way fixed gemma removes u: what each does to the choice leak
+Jesse largest +0.077 | median +0.025
+Kai   largest -0.286 | median -0.100
+Dana  largest +0.031 | median +0.015
+
+== READ, per case (line 4 B: leak out = at most 0.5 of the plain leak left by size + all random moves < 0.1; outcome kept = harm-blame and liability gaps keep >= 0.8)
+case  | choice leak plain -> fixed  left | harm-blame gap kept | liability gap kept | random | verdict
+READ Jesse | +1.1882 -> +0.1095  0.092 | +8.622 -> +7.458  0.865 | +0.979 -> +0.933  0.954 | +0.077 | LEAK OUT + OUTCOME KEPT
+READ Kai   | +0.5524 -> -0.3501  0.634 | +8.395 -> +7.864  0.937 | +0.958 -> +0.923  0.963 | -0.286 | LEAK NOT OUT, outcome kept
+READ Dana  | +2.7211 -> +0.8240  0.303 | +8.288 -> +7.142  0.862 | +0.957 -> +0.749  0.783 | +0.031 | LEAK OUT, OUTCOME LOST
+READ Riley choice gap +3.4390 -> +3.1725, kept 0.923 -> KEPT (>= 0.8, mass >= 0.9)
+Riley harm-blame gap +0.506 -> +1.470 | liability gap +0.018 -> +0.024 (information only)
+
+== ANSWERS. greedy, 80 tokens from the prefill, plain and fixed (information only - read together)
+
+-- Jesse no_harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's choice to let the dog off leash was a risk, but no harm occurred.
+
+
+Jesse's choice to let the dog off leash was a risk, but it did not result in any harm.  The dog did not cause any injury, and Jesse did not
+
+-- Jesse no_harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knew the rule and chose to break it.
+
+Jesse's choice to break the leash rule, despite knowing the risk, is a significant moral failing.  However, the outcome of the dog not harming anyone negates any direct harm caused by Jesse's actions.  
+
+-- Jesse harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly violated a rule to allow the dog to run off leash, knowing the risk of harm.
+
+
+Jesse's choice to let the dog off leash, despite knowing the risk, is a significant factor in the harm that occurred.  The dog's actions were directly
+
+-- Jesse harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly violated a rule to allow the dog to run off leash, putting a child at risk.
+
+
+Jesse's choice to let the dog off leash, while not intending harm, was a direct cause of the child's injury.  The child's injury was
+
+-- Kai no_harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working.
+
+Kai's choice to skip the brake test, while not malicious, was a clear violation of company policy and a significant risk to safety.  The outcome of no harm is a positive one, but it does not negate the fact that Kai
+
+-- Kai no_harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working.
+
+Kai's choice to skip the brake test was a serious breach of company policy and a clear disregard for safety.  However, the fact that his brakes were working and the shift passed without incident means he did not cause any harm.  
+
+-- Kai harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly chose to disregard a safety rule.
+
+
+Kai's choice to skip the brake test, while not intending to cause harm, directly led to a serious accident.  The severity of the harm, combined with the knowledge of the rule and the potential consequences of ignoring it
+
+-- Kai harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly chose to disregard a safety rule.
+
+
+Kai's choice to skip the brake test, while not malicious, was a direct violation of company policy and a clear disregard for safety. This disregard directly led to the harm inflicted on the coworker, making the outcome a direct
+
+-- Quinn no_harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's choice to send the unencrypted file, despite knowing the policy, is the primary factor.  The outcome was a result of a random error, not a direct action by Quinn.  Quinn did not cause harm, and therefore does not owe compensation. 
+
+
+<end_of_turn>
+
+-- Quinn no_harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send the file without encryption.
+
+
+Quinn's choice to send the file without encryption, despite knowing the policy and the potential consequences, is a significant breach of company policy.  While the email reached the right recipient and no harm occurred, the decision to send
+
+-- Quinn harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send the data unencrypted.
+
+Quinn's choice to send the data unencrypted, despite knowing the policy and the potential consequences, is a significant breach of responsibility. This directly led to the harm of 40 customers losing money, making the blame for
+
+-- Quinn harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 7
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send the file unencrypted.
+
+Quinn's choice to send the unencrypted file, despite knowing the policy and the potential consequences, is a significant breach of responsibility.  The resulting harm, the theft of $300,000 from 
+
+-- Dana no_harm plain:
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING
+BASIS: Dana's choice was a momentary lapse in judgment, not a reckless act. 
+
+
+Dana's choice to read their phone was a risk, but it was a momentary lapse in judgment, not a reckless act. The outcome was a fortunate one, with no one being injured
+
+-- Dana no_harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING
+BASIS: Dana's choice was a risk, but no harm was caused.
+
+Dana's choice to read a phone while driving, even for a short period, is a clear violation of safety rules and carries a significant risk.  However, the fact that no harm occurred in this
+
+-- Dana harm plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice to read the phone while driving, even for a short time, directly caused the harm. 
+
+
+Dana's choice to read the phone, even for a brief moment, was a direct cause of the child's injury.  While the child'
+
+-- Dana harm fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice to read the phone while driving, even though it was a momentary lapse, directly caused the harm. 
+
+
+Dana's choice to read the phone, even for a short period, was a direct cause of the child's injury. While the child
+
+-- Riley careful plain:
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to see the child due to the parked cars. 
+
+Riley's choice to drive at the speed limit in a residential street with parked cars was negligent, but the outcome of the child running out in front of the car was unavoidable.  Riley'
+
+-- Riley careful fixed:
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to see the child due to the parked cars. 
+
+Riley's choice to drive at the speed limit in a residential street with parked cars, while paying attention, was negligent.  However, the child's actions of running out from between parked
+
+-- Riley careless plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice of reading a message while driving.
+
+Riley's choice to read a message while driving, even for a short period, is a clear violation of the duty of care owed to others on the road. This violation directly led to the child's serious
+
+-- Riley careless fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice to read a message while driving.
+
+Riley's choice to read a message while driving, even for a brief period, is a clear violation of the duty of care owed to others on the road. This violation directly led to the child's serious
+[run-evidence] exit=0 elapsed=301s (predicted eta=~3-5 min (smoke: 35 s for 2 answers + ~30 passes; this ~170 passes + 20 answers)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/outcome-removed-new-cases-gemma-2-2b-it.log

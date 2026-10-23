@@ -9,8 +9,11 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removal <name>     step 3 - take the outcome direction out, Riley and random checks
     .venv/bin/python outcome_leak.py removal-from-log <name>   redraw the step 3 picture from that run's log, no model
     .venv/bin/python outcome_leak.py removal-sturdy <name>   step a - last token vs every token, 10 random directions
+    .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
+    .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
 """
 
+import contextlib
 import faulthandler
 import json
 import math
@@ -144,6 +147,56 @@ def read_removal(shrinks, masses, kept, riley_masses, moves):
     return out, grounds, [L for L in grounds if abs(moves[L]) < CONTROL_MAX]
 
 
+# step c, the removed model on new cases (agreed 2026-10-23, before the smoke)
+LIABILITY = (" OWES-COMPENSATION", " OWES-NOTHING")  # the two answers the output contract allows, after "LIABILITY:"
+
+
+def phrase_prob(token_probs):
+    """The probability of a whole phrase = its tokens' probabilities, each given the ones before, multiplied."""
+    return math.prod(token_probs)
+
+
+def liability_read(p_owes, p_nothing):
+    """Returns (P owes, mass): P owes renormalised over the two allowed answers (1 = sure it owes, 0 = sure it
+    doesn't), mass = how much of gemma's probability the two answers hold together - like digit mass."""
+    mass = p_owes + p_nothing
+    return (math.nan if mass == 0 else p_owes / mass), mass
+
+
+LEFT_MAX = 0.5  # leak out = at most half of the plain leak is left, by size - a flipped leak counts by its size
+# (line 4 clarified to this by Sara after the smoke showed Kai's leak flip sign, before the run)
+
+
+def left(before, after):
+    """How much of a leak is left, by size: 0 = none, 1 = all of it, over 1 = bigger. -0.35 after +0.55 = 0.64."""
+    return abs(after) / abs(before)
+
+
+def case_gate(gaps, masses):
+    """Plain gemma, one case. gaps = (choice leak, harm-blame gap, liability gap), each harm - no_harm; masses = every
+    read's mass. Returns the reasons to drop the case; empty = it can be tested."""
+    choice, harm, liability = gaps
+    reasons = [f"|choice leak| {abs(choice):.3f} < {LEAK_MIN}"] if abs(choice) < LEAK_MIN else []
+    reasons += [f"harm-blame gap {harm:.3f} < {GAP_MIN}"] if harm < GAP_MIN else []
+    reasons += [f"liability gap {liability:.3f} < {GAP_MIN}"] if liability < GAP_MIN else []
+    reasons += [f"a read's mass {min(masses):.3f} < {MASS_MIN}"] if min(masses) < MASS_MIN else []
+    return reasons
+
+
+def read_case(plain, fixed, fixed_masses, moves):
+    """Line 4 for one case. plain / fixed = (choice leak, harm-blame gap, liability gap); fixed_masses = fixed gemma's
+    (choice masses, harm + liability masses); moves = what each random direction did to the choice leak.
+
+    Returns (left, harm kept, liability kept, largest random move, leak out, outcome kept).
+    """
+    gone = left(plain[0], fixed[0])
+    harm_kept, liability_kept = fixed[1] / plain[1], fixed[2] / plain[2]
+    move = largest(moves)
+    out = gone <= LEFT_MAX and abs(move) < CONTROL_MAX and min(fixed_masses[0]) >= MASS_MIN
+    kept = harm_kept >= KEEP_MIN and liability_kept >= KEEP_MIN and min(fixed_masses[1]) >= MASS_MIN
+    return gone, harm_kept, liability_kept, move, out, kept
+
+
 # ------------------------------------------------------------------------------------------------ the model
 
 import torch  # noqa: E402 - below the logic on purpose: the canned test reads the top half first
@@ -151,14 +204,15 @@ import torch  # noqa: E402 - below the logic on purpose: the canned test reads t
 MODEL = "google/gemma-2-2b-it"
 DEVICE = "mps"
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "moral-luck-02.json"  # verbatim copy, theory-grounds-testing
+FIXTURE_06 = FIXTURE.parent / "moral-luck-06-sep.json"  # verbatim copy, judge-outcome-bias-probe d4b5579: cases E-G
 PREFILL = "BLAME-FOR-CHOICE: "  # gemma's answer starts with this, so the next token is the number
 LEGS = ("no_harm", "harm")
 SANITY_TOL = 1e-3  # an honesty check passes if expected blame moves by at most this (fixed before the smoke)
 
 
-def prompts(key="A"):
+def prompts(key="A", fixture=FIXTURE):
     """One case's prompts (A = Dana): leg + question + answer format, joined as moral-luck-02 did, 0-10 -> 0-9."""
-    fx = json.loads(FIXTURE.read_text())
+    fx = json.loads(fixture.read_text())
     case = fx["cases"][key]
     contract = fx["output_contract"]
     assert contract.count(" to 10") == 2, "the 0-10 scale should appear exactly twice"
@@ -179,10 +233,10 @@ def load():
     return tok, model.eval()
 
 
-def encode(tok, user):
-    """Chat template + the prefill, as token ids. The template already starts with <bos>."""
+def encode(tok, user, prefill=PREFILL):
+    """Chat template + the prefill (the start of gemma's answer), as token ids. The template already starts with <bos>."""
     text = tok.apply_chat_template([{"role": "user", "content": user}], tokenize=False, add_generation_prompt=True)
-    return tok(text + PREFILL, add_special_tokens=False, return_tensors="pt").input_ids.to(DEVICE)
+    return tok(text + prefill, add_special_tokens=False, return_tensors="pt").input_ids.to(DEVICE)
 
 
 def digit_ids(tok):
@@ -708,9 +762,254 @@ def removal_from_log(name):
     return True
 
 
+STEP_A = "dana-outcome-removal-alltokens-gemma-2-2b-it"  # fixed gemma must reproduce its every-token row
+FIX_ROW = 17  # fixed gemma: the direction comes out after layer 17, at every token (agreed 2026-10-23)
+
+
+@contextlib.contextmanager
+def fixed(model, u, L=FIX_ROW):
+    """Fixed gemma: after layer L, every token's notes lose their part along u - the prompt's and each one written."""
+    def edit(m, a, o):
+        hs = o[0] if isinstance(o, tuple) else o
+        hs[0] = remove(hs[0].float(), u.to(hs.device)).to(hs.dtype)
+
+    hook = model.model.layers[L - 1].register_forward_hook(edit)  # row L = the output of layer L
+    try:
+        yield
+    finally:
+        hook.remove()
+
+
+def step_a_row(L):
+    """Step a's every-token row L as logged: (Dana leak, Riley gap)."""
+    import re
+
+    text = (pathlib.Path(__file__).parent / "evidence" / "raw-logs" / f"{STEP_A}.log").read_text()
+    m = re.search(rf"^\s*{L} \| (\S+) \S+ \S+ \| (\S+) ", text.split("== REMOVAL (every)")[1], re.M)
+    return float(m[1]), float(m[2])
+
+
+def phrase_tokens(model, tok, user, prefill, phrase):
+    """Each token of phrase with its probability, given the prompt, the prefill and the phrase's tokens before it."""
+    pre, full = encode(tok, user, prefill), encode(tok, user, prefill + phrase)
+    n = pre.shape[1]
+    assert torch.equal(full[0, :n], pre[0]), f"{phrase!r} changes how the prefill is cut into tokens"
+    with torch.no_grad():
+        logits = model(full, logits_to_keep=full.shape[1] - n + 1).logits[0, :-1].float()
+    probs = torch.softmax(logits, -1).gather(1, full[0, n:, None])[:, 0]
+    return [(tok.convert_ids_to_tokens(t), p) for t, p in zip(full[0, n:].tolist(), probs.tolist())]
+
+
+def reads(model, tok, dids, user):
+    """The three reads of one answer, each from gemma's own probabilities: choice blame, then harm blame after
+    gemma's own top choice digit, then P(owes) after its own top harm digit."""
+    def digits_at(prefill):
+        ids = encode(tok, user, prefill)
+        assert tok.convert_ids_to_tokens(ids[0, -1].item()) == "▁", f"the read after {prefill!r} must be the space"
+        probs = run(model, ids)[1]
+        ps = [probs[i].item() for i in dids]
+        return expected_blame(ps), max(DIGITS, key=lambda d: ps[d]), ids
+
+    choice, c, choice_ids = digits_at(PREFILL)
+    harm, h, harm_ids = digits_at(f"{PREFILL}{c}\nBLAME-FOR-HARM: ")
+    pre = f"{PREFILL}{c}\nBLAME-FOR-HARM: {h}\nLIABILITY:"
+    phrases = {ph: phrase_tokens(model, tok, user, pre, ph) for ph in LIABILITY}
+    liability = liability_read(*(phrase_prob([p for _, p in phrases[ph]]) for ph in LIABILITY))
+    return {"choice": choice, "c": c, "harm": harm, "h": h, "liability": liability, "phrases": phrases,
+            "ids": {"choice": choice_ids, "harm": harm_ids, "liability": encode(tok, user, pre)}}
+
+
+def fix_direction(model, tok):
+    """The outcome direction fixed gemma removes: Sam + Alex, harm - no_harm at the last token, row FIX_ROW."""
+    diffs = []
+    for key in "BC":  # Sam, Alex
+        legs = {leg: run(model, encode(tok, user))[0][FIX_ROW] for leg, user in prompts(key).items()}
+        diffs.append(legs["harm"] - legs["no_harm"])
+    u = outcome_direction(diffs)
+    print(f"direction: Sam + Alex, row {FIX_ROW}, length {u.norm():.4f}")
+    return u
+
+
+def removed_smoke():
+    """Step c smoke: do the three reads work on a new case (Kai), and does fixed gemma reproduce step a?"""
+    import transformers
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype}")
+    dids = digit_ids(tok)
+    fx02, fx06 = json.loads(FIXTURE.read_text()), json.loads(FIXTURE_06.read_text())
+    print(f"fixture {FIXTURE_06.name}: question + output contract equal to {FIXTURE.name}: "
+          f"{fx02['question'] == fx06['question'] and fx02['output_contract'] == fx06['output_contract']} | "
+          f"cases A-D legs equal: {all(fx02['cases'][k]['legs'] == fx06['cases'][k]['legs'] for k in 'ABCD')}")
+
+    u = fix_direction(model, tok)
+
+    kai = prompts("F", FIXTURE_06)
+    got = {}
+    for model_name in ("plain", "fixed"):
+        with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext():
+            got[model_name] = {leg: reads(model, tok, dids, user) for leg, user in kai.items()}
+
+    print("\n== 1. the read positions as gemma sees them (Kai harm, plain gemma: last 12 tokens of each)")
+    r = got["plain"]["harm"]
+    for what, ids in r["ids"].items():
+        print(f"-- {what}: {[tok.convert_ids_to_tokens(t) for t in ids[0, -12:].tolist()]}")
+    for ph, toks in r["phrases"].items():
+        print(f"-- liability phrase {ph!r}: " + " ".join(f"{t!r}:{p:.4f}" for t, p in toks))
+
+    print("\n== 2. the three reads, Kai (choice / harm = expected blame (digit mass) top digit; liability = P owes "
+          "(mass))")
+    checks = []
+    for model_name in ("plain", "fixed"):
+        for leg in kai:
+            r = got[model_name][leg]
+            (cb, cm), (hb, hm), (lp, lm) = r["choice"], r["harm"], r["liability"]
+            print(f"{model_name:5s} {leg:8s} | choice {cb:.4f} ({cm:.4f}) {r['c']} | harm {hb:.4f} ({hm:.4f}) {r['h']} | "
+                  f"liability {lp:.4f} ({lm:.4f})")
+            checks += [(f"{model_name} {leg} choice digit mass {cm:.4f}", cm >= MASS_MIN),
+                       (f"{model_name} {leg} harm digit mass {hm:.4f}", hm >= MASS_MIN),
+                       (f"{model_name} {leg} liability mass {lm:.4f}", lm >= MASS_MIN)]
+    for model_name in ("plain", "fixed"):
+        g = got[model_name]
+        print(f"{model_name} gaps, harm - no_harm: choice {g['harm']['choice'][0] - g['no_harm']['choice'][0]:+.4f} | "
+              f"harm blame {g['harm']['harm'][0] - g['no_harm']['harm'][0]:+.4f} | "
+              f"liability {g['harm']['liability'][0] - g['no_harm']['liability'][0]:+.4f}  (a preview, not the run)")
+
+    print("\n== 3. the whole answer, Kai harm (greedy, 80 tokens from the prefill)")
+    ids = encode(tok, kai["harm"])
+    for model_name in ("plain", "fixed"):
+        with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext(), torch.no_grad():
+            out = model.generate(ids, max_new_tokens=80, do_sample=False)
+        print(f"\n-- {model_name}:\n{PREFILL}{tok.decode(out[0, ids.shape[1]:])}")
+
+    print(f"\n== 4. honesty check: fixed gemma vs {STEP_A}, every-token row {FIX_ROW}")
+    with fixed(model, u):
+        b = {(key, leg): expected_blame([run(model, encode(tok, user))[1][i].item() for i in dids])[0]
+             for key in "AD" for leg, user in prompts(key).items()}
+    now = (b["A", "harm"] - b["A", "no_harm"], b["D", "careless"] - b["D", "careful"])
+    then = step_a_row(FIX_ROW)
+    for what, x, y in (("Dana leak", now[0], then[0]), ("Riley gap", now[1], then[1])):
+        ok = abs(x - y) <= SANITY_TOL
+        print(f"{what}: now {x:+.4f} vs step a {y:+.4f}, difference {abs(x - y):.6f} -> {'PASS' if ok else 'FAIL'}")
+        checks.append((f"{what} reproduces step a", ok))
+
+    print()
+    for what, ok in checks:
+        print(f"{'PASS' if ok else 'FAIL'} {what}")
+    passed = sum(ok for _, ok in checks)
+    print(f"\nSMOKE checks: {passed}/{len(checks)} pass")
+    return passed == len(checks)
+
+
+NEW_CASES = {"Jesse": ("E", FIXTURE_06), "Kai": ("F", FIXTURE_06), "Quinn": ("G", FIXTURE_06), "Dana": ("A", FIXTURE)}
+
+
+def removed_cases(name):
+    """Step c: fixed gemma (the outcome direction out after layer 17, every token) on new cases E-G, Dana as the
+    reference, Riley as the grounds check. Agreed with Sara 2026-10-23; line 4 clarified to B after the smoke."""
+    import transformers
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype}")
+    dids = digit_ids(tok)
+    u = fix_direction(model, tok)
+    randoms = [random_direction(model, s) for s in SEEDS]
+    users = {who: prompts(key, fx) for who, (key, fx) in NEW_CASES.items()} | {"Riley": prompts("D")}
+
+    def gaps(r, a, b):
+        return tuple(r[b][k][0] - r[a][k][0] for k in ("choice", "harm", "liability"))
+
+    def masses(r):
+        return [r[leg][k][1] for leg in r for k in ("choice", "harm", "liability")]
+
+    got = {}
+    for model_name in ("plain", "fixed"):
+        print(f"\n== {model_name.upper()} gemma: the three reads (choice / harm = expected blame (digit mass) top digit;"
+              f" liability = P owes (mass))")
+        with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext():
+            got[model_name] = {who: {leg: reads(model, tok, dids, user) for leg, user in legs.items()}
+                               for who, legs in users.items()}
+        for who, legs in got[model_name].items():
+            for leg, r in legs.items():
+                (cb, cm), (hb, hm), (lp, lm) = r["choice"], r["harm"], r["liability"]
+                print(f"{who:5s} {leg:8s} | choice {cb:.4f} ({cm:.4f}) {r['c']} | harm {hb:.4f} ({hm:.4f}) {r['h']} | "
+                      f"liability {lp:.4f} ({lm:.4f})")
+
+    print("\n== GATE. plain gemma, per case: |choice leak| >= 0.3, harm-blame gap and liability gap >= 0.3, "
+          "every read's mass >= 0.9")
+    tested = []
+    for who in NEW_CASES:
+        g = gaps(got["plain"][who], "no_harm", "harm")
+        stop = case_gate(g, masses(got["plain"][who]))
+        print(f"{who:5s} choice leak {g[0]:+.4f} | harm-blame gap {g[1]:+.4f} | liability gap {g[2]:+.4f} -> "
+              + ("TESTED" if not stop else "DROPPED: " + "; ".join(stop)))
+        tested += [who] if not stop else []
+    riley = gaps(got["plain"]["Riley"], "careful", "careless")
+    riley_stop = riley_gate(got["plain"]["Riley"]["careful"]["choice"], got["plain"]["Riley"]["careless"]["choice"])
+    print(f"Riley choice gap careless - careful {riley[0]:+.4f} -> {'GO' if not riley_stop else 'STOP: ' + riley_stop[0]}")
+    if not [w for w in tested if w != "Dana"] or riley_stop:
+        print("GATE STOP: no new case can be tested" if not riley_stop else "GATE STOP: Riley has no real gap")
+        return True
+
+    print(f"\n== CHECK. fixed gemma vs {STEP_A}, every-token row {FIX_ROW}")
+    dana_now = gaps(got["fixed"]["Dana"], "no_harm", "harm")[0]
+    riley_now = gaps(got["fixed"]["Riley"], "careful", "careless")[0]
+    ok = True
+    for what, x, y in (("Dana leak", dana_now, step_a_row(FIX_ROW)[0]), ("Riley gap", riley_now, step_a_row(FIX_ROW)[1])):
+        ok &= abs(x - y) <= SANITY_TOL
+        print(f"{what}: now {x:+.4f} vs step a {y:+.4f}, difference {abs(x - y):.6f} -> "
+              f"{'PASS' if abs(x - y) <= SANITY_TOL else 'FAIL'} (tolerance {SANITY_TOL})")
+
+    print(f"\n== RANDOM CONTROL. {len(SEEDS)} random directions, each removed the way fixed gemma removes u: "
+          "what each does to the choice leak")
+    moves = {}
+    for who in tested:
+        plain_leak = gaps(got["plain"][who], "no_harm", "harm")[0]
+        moves[who] = []
+        for ru in randoms:
+            with fixed(model, ru):
+                b = {leg: expected_blame([run(model, encode(tok, user))[1][i].item() for i in dids])[0]
+                     for leg, user in users[who].items()}
+            moves[who].append(shrink(plain_leak, b["harm"] - b["no_harm"]))
+        print(f"{who:5s} largest {largest(moves[who]):+.3f} | median {statistics.median(moves[who]):+.3f}")
+
+    print(f"\n== READ, per case (line 4 B: leak out = at most {LEFT_MAX} of the plain leak left by size + all random "
+          f"moves < {CONTROL_MAX}; outcome kept = harm-blame and liability gaps keep >= {KEEP_MIN})")
+    print("case  | choice leak plain -> fixed  left | harm-blame gap kept | liability gap kept | random | verdict")
+    for who in tested:
+        p_, f_ = gaps(got["plain"][who], "no_harm", "harm"), gaps(got["fixed"][who], "no_harm", "harm")
+        fr = got["fixed"][who]
+        fm = ([fr[leg]["choice"][1] for leg in fr], [fr[leg][k][1] for leg in fr for k in ("harm", "liability")])
+        gone, hk, lk, move, out, kept = read_case(p_, f_, fm, moves[who])
+        verdict = ("LEAK OUT + OUTCOME KEPT" if out and kept else "LEAK OUT, OUTCOME LOST" if out
+                   else "LEAK NOT OUT" + (", outcome kept" if kept else ", outcome lost"))
+        print(f"READ {who:5s} | {p_[0]:+.4f} -> {f_[0]:+.4f}  {gone:.3f} | {p_[1]:+.3f} -> {f_[1]:+.3f}  {hk:.3f} | "
+              f"{p_[2]:+.3f} -> {f_[2]:+.3f}  {lk:.3f} | {move:+.3f} | {verdict}")
+    riley_fixed = gaps(got["fixed"]["Riley"], "careful", "careless")
+    riley_masses = [got["fixed"]["Riley"][leg]["choice"][1] for leg in ("careful", "careless")]
+    riley_ok = riley_fixed[0] / riley[0] >= KEEP_MIN and min(riley_masses) >= MASS_MIN
+    print(f"READ Riley choice gap {riley[0]:+.4f} -> {riley_fixed[0]:+.4f}, kept {riley_fixed[0] / riley[0]:.3f} -> "
+          f"{'KEPT' if riley_ok else 'NOT KEPT'} (>= {KEEP_MIN}, mass >= {MASS_MIN})")
+    print(f"Riley harm-blame gap {riley[1]:+.3f} -> {riley_fixed[1]:+.3f} | liability gap {riley[2]:+.3f} -> "
+          f"{riley_fixed[2]:+.3f} (information only)")
+
+    print("\n== ANSWERS. greedy, 80 tokens from the prefill, plain and fixed (information only - read together)")
+    for who, legs in users.items():
+        for leg, user in legs.items():
+            ids = encode(tok, user)
+            for model_name in ("plain", "fixed"):
+                with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext(), torch.no_grad():
+                    out = model.generate(ids, max_new_tokens=80, do_sample=False)
+                print(f"\n-- {who} {leg} {model_name}:\n{PREFILL}{tok.decode(out[0, ids.shape[1]:])}")
+    return ok
+
+
 if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
-    sys.exit(0 if (smoke() if cmd == "smoke" else {"patching": patching, "lens-from-log": lens_from_log,
-                                                   "removal": removal, "removal-from-log": removal_from_log,
-                                                   "removal-sturdy": removal_sturdy}[cmd](sys.argv[2])) else 1)
+    no_name = {"smoke": smoke, "removed-smoke": removed_smoke}
+    named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
+             "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases}
+    sys.exit(0 if (no_name[cmd]() if cmd in no_name else named[cmd](sys.argv[2])) else 1)

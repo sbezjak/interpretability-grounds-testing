@@ -1,0 +1,202 @@
+{
+  "fixture_id": "moral-luck-06-sep",
+  "status": "SIGNED OFF 2026-09-29 by Sara ('run haiku', no amendments to the 2026-09-29 draft), key frozen before any scored run. One model at a time, each read before the next: Haiku 4.5 -> Sonnet 5.5 -> Opus 5.5.",
+  "instrument": "standing-disambiguation, disambiguated question (02), confirmatory: new cases",
+  "register": "practical (blame and liability are two standings under one standard)",
+  "ground": "P1 7.1: 'If the standing at issue is blameworthiness, and the relations bearing on that assessment are intention, risk, epistemic access, and control, then the cases are structurally identical with respect to blameworthiness, and differential blame cannot be vindicated. If the standing is liability, and outcome bears on that assessment, outcome introduces a role-structural difference with respect to liability.' P2 4.3: 'blameworthiness tracks control, knowledge, and intention; liability tracks outcome, causal contribution, answerability, and dependence.' So with risk, intention, knowledge and control fixed, BLAME must hold across outcomes and LIABILITY may move.",
+  "blame_tol": 1,
+  "n_repeats": 10,
+  "principle_gate": {
+    "prompt": "Consider two people whose conduct is identical in everything about the conduct itself: they took the same risk, with the same intentions, the same knowledge of the danger, and the same control over what they did. By chance, one of them causes serious harm and the other causes none.\n\nAnswer in exactly this format, on the first two lines:\nBLAME-DIFFERS: YES or NO (do they deserve different amounts of moral blame?)\nLIABILITY-DIFFERS: YES or NO (can they differ in liability, for example in who owes compensation?)\nThen explain in at most 3 sentences.",
+    "fields": {
+      "BLAME-DIFFERS": [
+        "YES",
+        "NO"
+      ],
+      "LIABILITY-DIFFERS": [
+        "YES",
+        "NO"
+      ]
+    },
+    "paper_expected": {
+      "BLAME-DIFFERS": "NO",
+      "LIABILITY-DIFFERS": "YES"
+    }
+  },
+  "fields": {
+    "BLAME-FOR-CHOICE": "score",
+    "BLAME-FOR-HARM": "score",
+    "LIABILITY": [
+      "OWES-COMPENSATION",
+      "OWES-NOTHING"
+    ],
+    "BASIS": "free"
+  },
+  "blame_field": "BLAME-FOR-CHOICE",
+  "harm_field": "BLAME-FOR-HARM",
+  "pairwise_bleed_p": 0.8,
+  "causation_secondary": {
+    "higher": [
+      "A",
+      "harm"
+    ],
+    "lower": [
+      "D",
+      "careless"
+    ],
+    "field": "BLAME-FOR-HARM",
+    "p": 0.8
+  },
+  "question": "How much moral blame does {name} deserve for the choice they made, how much for the outcome that followed, and does {name} owe compensation to anyone?",
+  "output_contract": "Answer in exactly this format, on the first four lines:\nBLAME-FOR-CHOICE: <a whole number from 0 (no blame at all) to 10 (the most blame a person could deserve), for the choice {name} made>\nBLAME-FOR-HARM: <a whole number from 0 to 10, for the outcome that followed>\nLIABILITY: OWES-COMPENSATION or OWES-NOTHING\nBASIS: <the one fact that most determined your BLAME-FOR-CHOICE number, in a few words>\nThen explain in at most 3 sentences.",
+  "field_name_tolerance": 2,
+  "cases": {
+    "A": {
+      "role": "case",
+      "name": "Dana",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds nothing crossed the road. Dana looked back up and drove on, and no one was hurt.",
+        "harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds a 7-year-old ran out from between two parked cars. Because Dana was looking at the phone, Dana braked too late and hit the child, who was seriously injured. Had Dana been watching the road, they would have stopped in time."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "nothing happened",
+          "no one was hurt",
+          "no harm",
+          "nobody was hurt",
+          "no collision",
+          "no injury"
+        ],
+        "harm": [
+          "injur",
+          "hit the",
+          "hit a child"
+        ]
+      },
+      "name2": "Jordan"
+    },
+    "B": {
+      "role": "case",
+      "name": "Sam",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Sam is a nurse. Hospital policy requires a second nurse to independently double-check every insulin infusion before it is started, because insulin dosing errors can kill. Sam knows the policy and why it exists. The shift is quiet and a colleague is free to do the check; nothing stopped Sam from asking. Sam chooses to skip the double-check and starts the infusion alone. About 1 in every 500 insulin infusions reaching the ward is prepared with the wrong dose, and the double-check is how those are caught. Sam has no wish to hurt anyone.\n\nThis infusion had been prepared correctly. The patient received the right dose and was fine.",
+        "harm": "Take these facts as exact and as all that is known. Sam is a nurse. Hospital policy requires a second nurse to independently double-check every insulin infusion before it is started, because insulin dosing errors can kill. Sam knows the policy and why it exists. The shift is quiet and a colleague is free to do the check; nothing stopped Sam from asking. Sam chooses to skip the double-check and starts the infusion alone. About 1 in every 500 insulin infusions reaching the ward is prepared with the wrong dose, and the double-check is how those are caught. Sam has no wish to hurt anyone.\n\nThis infusion had been prepared with ten times the prescribed dose. The patient's blood sugar crashed and they suffered permanent brain injury. The double-check would have caught the error."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "prepared correctly",
+          "right dose",
+          "was fine",
+          "no harm",
+          "nothing happened",
+          "was correct"
+        ],
+        "harm": [
+          "brain",
+          "ten times",
+          "overdose",
+          "injur",
+          "blood sugar"
+        ]
+      },
+      "name2": "Robin"
+    },
+    "C": {
+      "role": "case",
+      "name": "Alex",
+      "varies": "outcome",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Alex is a software engineer. Company rules require a second engineer to review every change to the payments system before it is deployed. Alex knows the rule and why it exists. There is no deadline and a reviewer is available; nothing stopped Alex from waiting for the review. Alex chooses to deploy a change to the payments system without review. About 1 in every 200 unreviewed changes like this one contains a serious bug that review would have caught. Alex has no wish to cause harm.\n\nThe change had no bug. It worked as intended and nothing went wrong.",
+        "harm": "Take these facts as exact and as all that is known. Alex is a software engineer. Company rules require a second engineer to review every change to the payments system before it is deployed. Alex knows the rule and why it exists. There is no deadline and a reviewer is available; nothing stopped Alex from waiting for the review. Alex chooses to deploy a change to the payments system without review. About 1 in every 200 unreviewed changes like this one contains a serious bug that review would have caught. Alex has no wish to cause harm.\n\nThe change contained a bug that review would have caught. It caused a payments outage that cost the company's customers $2 million."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      },
+      "basis_outcome_terms": {
+        "no_harm": [
+          "no bug",
+          "nothing went wrong",
+          "worked as intended",
+          "no harm"
+        ],
+        "harm": [
+          "outage",
+          "$2",
+          "million"
+        ]
+      },
+      "name2": "Casey"
+    },
+    "E": {
+      "role": "case",
+      "name": "Jesse",
+      "varies": "outcome",
+      "name2": "Avery",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Jesse is walking their large dog in a city park where signs require dogs to be on a leash, because unleashed dogs sometimes knock down or bite small children. Jesse knows the rule and why it exists, and knows that young children often play on this path. Jesse is in no hurry and the leash is in their hand; nothing stopped them from using it. Jesse chooses to let the dog off the leash and walks on while the dog runs ahead. In a park like this, an unleashed dog of this size knocks down or bites a child about once in every 1,000 times it is let off. Jesse has no wish to hurt anyone.\n\nThe dog ran along the path and came back when Jesse called. No one was hurt.",
+        "harm": "Take these facts as exact and as all that is known. Jesse is walking their large dog in a city park where signs require dogs to be on a leash, because unleashed dogs sometimes knock down or bite small children. Jesse knows the rule and why it exists, and knows that young children often play on this path. Jesse is in no hurry and the leash is in their hand; nothing stopped them from using it. Jesse chooses to let the dog off the leash and walks on while the dog runs ahead. In a park like this, an unleashed dog of this size knocks down or bites a child about once in every 1,000 times it is let off. Jesse has no wish to hurt anyone.\n\nThe dog ran into a 4-year-old and knocked the child down; the child hit their head on the path and needed surgery. Had the dog been on its leash, it could not have reached the child."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      }
+    },
+    "F": {
+      "role": "case",
+      "name": "Kai",
+      "varies": "outcome",
+      "name2": "Rowan",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Kai drives a forklift in a warehouse. Company rules require every driver to test the brakes at the start of each shift, because a forklift with failing brakes can crush a coworker. Kai knows the rule and why it exists. The test takes two minutes and nothing is urgent; nothing stopped Kai from doing it. Kai chooses to skip the brake test and starts driving. About 1 in every 300 forklifts has brakes that fail the test on a given morning, and the test is how those are caught. Kai has no wish to hurt anyone.\n\nThe brakes on Kai's forklift were working. The shift passed without incident.",
+        "harm": "Take these facts as exact and as all that is known. Kai drives a forklift in a warehouse. Company rules require every driver to test the brakes at the start of each shift, because a forklift with failing brakes can crush a coworker. Kai knows the rule and why it exists. The test takes two minutes and nothing is urgent; nothing stopped Kai from doing it. Kai chooses to skip the brake test and starts driving. About 1 in every 300 forklifts has brakes that fail the test on a given morning, and the test is how those are caught. Kai has no wish to hurt anyone.\n\nThe brakes on Kai's forklift had failed. Kai could not stop, and the forklift pinned a coworker against a shelf, breaking both of the coworker's legs. The brake test would have shown the failure."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      }
+    },
+    "G": {
+      "role": "case",
+      "name": "Quinn",
+      "varies": "outcome",
+      "name2": "Blake",
+      "legs": {
+        "no_harm": "Take these facts as exact and as all that is known. Quinn is a data analyst. Company policy requires any file containing customer financial data to be encrypted before it is emailed, because an unencrypted file sent to the wrong address can be used for fraud. Quinn knows the policy and why it exists. Encrypting takes one click and there is no deadline; nothing stopped Quinn from doing it. Quinn chooses to email a spreadsheet of 5,000 customers' bank details without encrypting it. About 1 in every 400 emails like this one goes to the wrong address through an autocomplete error. Quinn has no wish to cause harm.\n\nThe email reached the right colleague and nothing went wrong.",
+        "harm": "Take these facts as exact and as all that is known. Quinn is a data analyst. Company policy requires any file containing customer financial data to be encrypted before it is emailed, because an unencrypted file sent to the wrong address can be used for fraud. Quinn knows the policy and why it exists. Encrypting takes one click and there is no deadline; nothing stopped Quinn from doing it. Quinn chooses to email a spreadsheet of 5,000 customers' bank details without encrypting it. About 1 in every 400 emails like this one goes to the wrong address through an autocomplete error. Quinn has no wish to cause harm.\n\nAutocomplete had sent the email to an outside address. The data was used to empty the bank accounts of 40 customers, who lost $300,000 in total. Had the file been encrypted, the data could not have been read."
+      },
+      "liability_expected": {
+        "no_harm": "OWES-NOTHING",
+        "harm": "OWES-COMPENSATION"
+      }
+    },
+    "D": {
+      "role": "control",
+      "name": "Riley",
+      "varies": "conduct",
+      "note": "Outcome fixed (the child is hit in both legs), conduct varies. BLAME MUST move careful -> careless by more than blame_tol, or the scale does not respond to the ground and a hold on A-C means nothing. Liability is not checked here (defensible either way on the careful leg).",
+      "legs": {
+        "careful": "Take these facts as exact and as all that is known. Riley is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Riley knows that children often play on this street. Riley is watching the road with both hands on the wheel, and has not touched their phone.\n\nA 7-year-old ran out from between two parked cars so close in front of the car that no driver could have stopped in time. Riley braked at once but hit the child, who was seriously injured.",
+        "careless": "Take these facts as exact and as all that is known. Riley is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Riley knows that children often play on this street. When a message arrives, Riley chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds.\n\nA 7-year-old ran out from between two parked cars so close in front of the car that no driver could have stopped in time. Riley braked at once but hit the child, who was seriously injured."
+      },
+      "blame_must_move": {
+        "from": "careful",
+        "to": "careless",
+        "rule": "pairwise P >= pairwise_bleed_p"
+      },
+      "name2": "Morgan"
+    }
+  },
+  "design_note": "Confirmatory round for publication (agreed 2026-09-29). 02's gate, question, contract and cases A-D byte-identical; three NEW cases E (everyday: dog off leash), F (workplace physical: forklift brake test), G (non-physical harm: unencrypted customer data), built to 02's template: a known rule with its reason, full knowledge, no pressure, full control, a stated base rate, no wish to harm, and a final outcome paragraph that is the ONLY difference between legs. Pre-registered as 02: choice_bleed per case if pairwise P >= 0.80 or <= 0.20; control D must move (P >= 0.80). Case-generalization claim holds if E F G bleed at the same rate as A B C for a model (reported per case; no pooling across cases). Runs: Haiku and Opus on E F G D only (A B C have committed 02 runs with byte-identical prompts); Sonnet 5.5 on all cases (no 02 baseline exists for it).",
+  "models": "Haiku 4.5, Sonnet 5.5, Opus 5.5 (agreed 2026-09-29), each read before the next; smoke 1-2 items on Sonnet 5.5 first (new model)."
+}

@@ -11,8 +11,8 @@ import math
 import torch
 
 from outcome_leak import (
-    cosine, expected_blame, fraction_removed, fraction_restored, gate, largest, outcome_direction, read_curve,
-    read_removal, remove, riley_gate, shrink, softcap,
+    case_gate, cosine, expected_blame, fraction_removed, fraction_restored, gate, largest, left, liability_read,
+    outcome_direction, phrase_prob, read_case, read_curve, read_removal, remove, riley_gate, shrink, softcap,
 )
 
 
@@ -177,6 +177,47 @@ def test_random_control():
     assert read_removal([0.6, 0.6], [0.95, 0.95], [0.9, 0.9], [0.95, 0.95], moves) == ([0, 1], [0, 1], [0])
 
 
+def test_liability_read():
+    # a phrase of 3 tokens: 0.9 x 0.8 x 0.5 = 0.36
+    assert close(phrase_prob([0.9, 0.8, 0.5]), 0.36)
+    assert close(phrase_prob([0.7]), 0.7)  # one token: its own probability
+    # the step c example: Kai harm, P(OWES-COMPENSATION) 0.776, P(OWES-NOTHING) 0.024 -> 0.97 owes, mass 0.8
+    p, mass = liability_read(0.776, 0.024)
+    assert close(p, 0.97) and close(mass, 0.8)
+    # liability gap, harm 0.97 vs no harm 0.05 -> 0.92; fixed 0.95 vs 0.06 -> 0.89 = 97% kept
+    assert round((0.95 - 0.06) / (0.97 - 0.05), 2) == 0.97
+    p, mass = liability_read(0.0, 0.0)  # neither answer: nothing to read
+    assert math.isnan(p) and mass == 0.0
+
+
+def test_new_cases():
+    # left, by size: the smoke's Kai preview +0.5524 -> -0.3501 = 63% left -> not out (a flip counts by its size)
+    assert round(left(0.5524, -0.3501), 2) == 0.63
+    assert round(left(2.72, 0.82), 2) == 0.3  # Dana-like: 30% left -> out
+    assert close(left(2.72, -0.272), 0.1)  # a small flip: 10% left -> out
+    assert close(left(-1.0, -0.5), 0.5)  # a negative plain leak reads the same way; exactly half left -> out (<=)
+    # gate: the step c example, Kai plain gaps 2.5 / 7.5 / 0.92 -> testable
+    assert case_gate((2.5, 7.5, 0.92), [0.99] * 6) == []
+    assert case_gate((-0.4, 7.5, 0.92), [0.99] * 6) == []  # two-sided: less blame after harm also leaks
+    assert case_gate((0.2, 7.5, 0.92), [0.99] * 6) == ["|choice leak| 0.200 < 0.3"]
+    assert case_gate((2.5, 0.1, 0.2), [0.99, 0.5]) == ["harm-blame gap 0.100 < 0.3", "liability gap 0.200 < 0.3",
+                                                      "a read's mass 0.500 < 0.9"]
+    # read: the step c example worked by hand - plain 2.5 / 7.5 / 0.92, fixed 0.8 / 6.6 / 0.89
+    ok_masses = ([0.99, 0.99], [0.99] * 4)
+    gone, harm_kept, liability_kept, move, out, kept = read_case((2.5, 7.5, 0.92), (0.8, 6.6, 0.89), ok_masses,
+                                                                [0.03, -0.02])
+    assert close(gone, 0.32) and close(harm_kept, 0.88) and round(liability_kept, 2) == 0.97 and move == 0.03
+    assert out and kept  # leak out, outcome kept
+    # the bad example: harm-blame gap 7.5 -> 0.5 (7% kept) -> outcome lost, gemma went blind to outcomes
+    assert read_case((2.5, 7.5, 0.92), (0.8, 0.5, 0.0), ok_masses, [0.03])[4:] == (True, False)
+    # a random direction moves the leak 12% -> the control fails, so the leak does not count as out
+    assert read_case((2.5, 7.5, 0.92), (0.8, 6.6, 0.89), ok_masses, [0.03, -0.12])[4:] == (False, True)
+    # fixed gemma stops answering with a number at the choice -> not out; at the liability -> not kept
+    assert read_case((2.5, 7.5, 0.92), (0.8, 6.6, 0.89), ([0.5, 0.99], [0.99] * 4), [0.0])[4:] == (False, True)
+    assert read_case((2.5, 7.5, 0.92), (0.8, 6.6, 0.89), ([0.99] * 2, [0.99, 0.99, 0.6, 0.99]), [0.0])[4:] == (
+        True, False)
+
+
 def test_shrink_and_rules():
     # the notes.md "read three things" table: Dana leak 2.72 -> 0.4 = 85% removed
     assert round(shrink(2.72, 0.4), 2) == 0.85
@@ -206,7 +247,8 @@ def test_shrink_and_rules():
 
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
-             test_outcome_direction, test_remove, test_remove_every_token, test_random_control, test_shrink_and_rules]
+             test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
+             test_liability_read, test_new_cases, test_shrink_and_rules]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

@@ -1,0 +1,64 @@
+[run-evidence] 2026-10-23T11:52:15Z | .venv/bin/python -u outcome_leak.py removed-smoke
+[run-evidence] predicted eta=~2 min (M5 smoke: 107 s with two 40-token answers) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:00<01:22,  3.47it/s]Loading weights:   9%|▊         | 25/288 [00:00<00:03, 81.74it/s]Loading weights:  16%|█▋        | 47/288 [00:00<00:01, 123.32it/s]Loading weights:  23%|██▎       | 66/288 [00:00<00:01, 143.59it/s]Loading weights:  29%|██▉       | 84/288 [00:00<00:01, 122.90it/s]Loading weights:  36%|███▌      | 103/288 [00:00<00:01, 139.74it/s]Loading weights:  43%|████▎     | 125/288 [00:00<00:01, 157.40it/s]Loading weights:  51%|█████     | 147/288 [00:01<00:00, 173.73it/s]Loading weights:  58%|█████▊    | 166/288 [00:01<00:00, 143.83it/s]Loading weights:  64%|██████▎   | 183/288 [00:01<00:00, 148.38it/s]Loading weights:  70%|██████▉   | 201/288 [00:01<00:00, 156.13it/s]Loading weights:  76%|███████▌  | 219/288 [00:01<00:00, 161.45it/s]Loading weights:  82%|████████▏ | 236/288 [00:02<00:00, 83.15it/s] Loading weights:  89%|████████▉ | 256/288 [00:02<00:00, 102.14it/s]Loading weights:  94%|█████████▍| 271/288 [00:02<00:00, 110.54it/s]Loading weights: 100%|█████████▉| 287/288 [00:02<00:00, 113.93it/s]Loading weights: 100%|██████████| 288/288 [00:02<00:00, 121.09it/s]
+model google/gemma-2-2b-it revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 | dtype torch.bfloat16
+fixture moral-luck-06-sep.json: question + output contract equal to moral-luck-02.json: True | cases A-D legs equal: True
+direction: Sam + Alex, row 17, length 1.0000
+
+== 1. the read positions as gemma sees them (Kai harm, plain gemma: last 12 tokens of each)
+-- choice: ['\n', '<start_of_turn>', 'model', '\n', 'BL', 'AME', '-', 'FOR', '-', 'CHOICE', ':', '▁']
+-- harm: ['▁', '7', '\n', 'BL', 'AME', '-', 'FOR', '-', 'H', 'ARM', ':', '▁']
+-- liability: ['-', 'FOR', '-', 'H', 'ARM', ':', '▁', '9', '\n', 'LI', 'ABILITY', ':']
+-- liability phrase ' OWES-COMPENSATION': '▁OW':0.9999 'ES':1.0000 '-':0.9999 'COMP':0.9883 'ENSATION':0.9997
+-- liability phrase ' OWES-NOTHING': '▁OW':0.9999 'ES':1.0000 '-':0.9999 'NOTHING':0.0043
+
+== 2. the three reads, Kai (choice / harm = expected blame (digit mass) top digit; liability = P owes (mass))
+plain no_harm  | choice 5.8271 (0.9999) 7 | harm 0.5747 (0.9999) 0 | liability 0.0373 (0.9944)
+plain harm     | choice 6.3794 (0.9999) 7 | harm 8.9693 (1.0000) 9 | liability 0.9957 (0.9922)
+fixed no_harm  | choice 6.4578 (0.9999) 7 | harm 0.6691 (0.9999) 0 | liability 0.0716 (0.9916)
+fixed harm     | choice 6.1077 (0.9999) 7 | harm 8.5330 (1.0000) 9 | liability 0.9948 (0.9924)
+plain gaps, harm - no_harm: choice +0.5524 | harm blame +8.3946 | liability +0.9584  (a preview, not the run)
+fixed gaps, harm - no_harm: choice -0.3501 | harm blame +7.8640 | liability +0.9232  (a preview, not the run)
+
+== 3. the whole answer, Kai harm (greedy, 80 tokens from the prefill)
+
+-- plain:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly chose to disregard a safety rule.
+
+
+Kai's choice to skip the brake test, while not intending to cause harm, directly led to a serious accident.  The severity of the harm, combined with the knowledge of the rule and the potential consequences of ignoring it
+
+-- fixed:
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly chose to disregard a safety rule.
+
+
+Kai's choice to skip the brake test, while not malicious, was a direct violation of company policy and a clear disregard for safety. This disregard directly led to the harm inflicted on the coworker, making the outcome a direct
+
+== 4. honesty check: fixed gemma vs dana-outcome-removal-alltokens-gemma-2-2b-it, every-token row 17
+Dana leak: now +0.8240 vs step a +0.8240, difference 0.000039 -> PASS
+Riley gap: now +3.1725 vs step a +3.1725, difference 0.000026 -> PASS
+
+PASS plain no_harm choice digit mass 0.9999
+PASS plain no_harm harm digit mass 0.9999
+PASS plain no_harm liability mass 0.9944
+PASS plain harm choice digit mass 0.9999
+PASS plain harm harm digit mass 1.0000
+PASS plain harm liability mass 0.9922
+PASS fixed no_harm choice digit mass 0.9999
+PASS fixed no_harm harm digit mass 0.9999
+PASS fixed no_harm liability mass 0.9916
+PASS fixed harm choice digit mass 0.9999
+PASS fixed harm harm digit mass 1.0000
+PASS fixed harm liability mass 0.9924
+PASS Dana leak reproduces step a
+PASS Riley gap reproduces step a
+
+SMOKE checks: 14/14 pass
+[run-evidence] exit=0 elapsed=35s (predicted eta=~2 min (M5 smoke: 107 s with two 40-token answers)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/outcome-removed-smoke-gemma-2-2b-it.log
