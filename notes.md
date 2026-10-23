@@ -131,6 +131,100 @@ being *that* certain. It is part of how gemma was trained, so it is part of the 
 When the model runs normally it does this inside its own code. The logit lens re-does the reader by hand, so it has to
 do the squash too - or even its layer-26 reading would not match the real answer.
 
+### What the first run showed (dana-outcome-patching-gemma-2-2b-it)
+
+The lens warning above ("a view, not a proof"), on real data. Patching says the outcome is in the last token's
+notes from about **layer 15** - swapping them there moves the blame. The lens sees a number only from **layer 23**
+(before that the digit mass is about 0). So for layers 15-22 the outcome is in the notes and matters, but the
+reader can't see it - like a draft in someone's private shorthand: the content is there, but a translator who only
+knows the final language reads nothing until it's written out. With the lens alone we'd have said "the outcome
+arrives at 23" - wrong. That's why patching is the test and the lens only a view.
+
+## Step 3 - take the leak out (planned)
+
+The reverse swap removed about 80% of the leak, but it cheated: it copied in *all* of the no-harm notes. Taking the
+leak out means removing **only the outcome** and leaving everything else alone.
+
+The notes are 2,304 numbers - a point in a big space. "Harm vs no harm" is one **direction** in that space. Find the
+direction, remove it from the notes, and see if the leak goes. Like turning down one slider on a mixing desk.
+
+### Why other cases, not just Dana
+
+With only Dana, the direction would be Dana's harm notes minus Dana's no-harm notes. That difference holds
+*everything* that differs between her two stories - not only "it ended in harm" but "a 7-year-old", "braked too
+late", "seriously injured", the extra words. Removing all of that is the reverse swap again: of course the leak goes.
+It's a test fitted to the one failing case - it passes trivially and proves nothing.
+
+So the direction is built from **Sam** (a nurse skips the insulin double-check) and **Alex** (an engineer deploys to
+payments without review). No car, no child, no road. Each one's harm-minus-no-harm has its own story details;
+combined, the details don't line up and mostly cancel, and what they **share** stays: the careless choice ended in
+harm. A toy with notes of 3 numbers, `[outcome, child-and-car stuff, hospital-or-code stuff]`:
+
+| case | harm - no harm |
+|---|---|
+| Sam | [1.0, 0.0, 0.6] |
+| Alex | [1.0, 0.0, -0.4] |
+| **average** | **[1.0, 0.0, 0.1]** - mostly outcome |
+| Dana | [1.0, 0.8, 0.0] |
+
+The direction never saw Dana's child or car. If removing it still shrinks Dana's leak, it carries "outcome" in
+general. Same idea as a train / test split: build on some cases, test on one held back.
+
+### Riley - the check that the grounds survive
+
+In both of Riley's stories the child is hurt; what differs is the **choice** - watching the road vs reading the
+phone. There, blame *should* differ: that's a real ground. If removing the direction also erases Riley's gap, we
+broke gemma's judgment of the choice, not just the leak. If Riley's gap survives, we took out the outcome and kept the
+grounds.
+
+### How the removal works - the arithmetic
+
+**1. Build the direction.** For Sam and for Alex: harm notes minus no-harm notes, at the last token, at one layer.
+Average the two - that's the **outcome direction**, `u`. Scale it to length 1, so it says only *which way*, not
+*how much*. In the toy above the average was `[1.0, 0.0, 0.1]`, so (rounding a bit) `u ≈ [1, 0, 0]` - the outcome
+slider.
+
+**2. Remove it.** For any notes `h`: measure how far they point along `u`, then subtract that part.
+
+    how much along u  =  h · u        (multiply number by number, add up)
+    h without it      =  h - (h · u) x u
+
+| | notes | along u | after removal |
+|---|---|---|---|
+| Dana harm | [2.0, 0.8, 0.3] | 2.0 | [0, 0.8, 0.3] |
+| Dana no harm | [1.0, 0.0, 0.3] | 1.0 | [0, 0.0, 0.3] |
+
+The outcome slider goes to 0 in **both** legs. Everything else - the child, the car - stays, because it doesn't point
+along `u`. Then gemma runs on and we read the expected blame as always.
+
+**3. Read three things** (made-up numbers):
+
+| | before | after - good | after - bad |
+|---|---|---|---|
+| **Dana leak** (should shrink) | 6.28 - 3.56 = 2.72 | 4.3 - 3.9 = 0.4 -> 85% removed | |
+| **Riley gap** (should survive) | e.g. 6.0 - 2.0 = 4.0 | 5.7 - 2.1 = 3.6 -> 90% kept | 4.2 - 3.8 = 0.4 -> judgment broken |
+| **Random direction** (control) | 2.72 | stays about 2.72 | |
+
+The **random control** asks: does removing *anything* make the leak drop? One random direction out of 2,304 should
+change almost nothing. If it kills the leak too, our result means nothing.
+
+The run also prints how **similar** the Sam / Alex direction is to Dana's own difference (cosine: 1 = same
+direction, 0 = unrelated) - a quick look at whether the three stories share an "outcome" at all.
+
+### Agreed before the run (2026-10-23)
+
+1. **Where:** every layer 0-26 at the last token, the same sweep as patching - no picking a layer. (The reverse swap
+   suggests ~20% may survive a one-token removal, re-read from earlier tokens; removing at every token is a later
+   option.)
+2. **Gate first:** if Riley shows no real gap at the start (careless - careful under 0.3), the grounds check can't
+   be read -> stop. Sam's and Alex's own leaks are printed, information only.
+3. **Taken out:** Dana's leak shrinks by **at least 50%** at a layer where digit mass is at least 0.9.
+4. **Grounds kept:** at that same layer, Riley's gap keeps **at least 80%**.
+5. **Control:** the random direction moves Dana's leak by **less than 10%**.
+
+Caveat: two cases make a weak direction. If it works anyway, that's strong; if it fails, it's the weak kind of null -
+maybe two weren't enough.
+
 ## Reading the result - same rule as my other repos
 
 - **Strong:** a clean effect you can switch on and off at a specific place, with the model still answering sensibly.
