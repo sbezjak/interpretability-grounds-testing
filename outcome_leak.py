@@ -11,6 +11,7 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removal-sturdy <name>   step a - last token vs every token, 10 random directions
     .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
+    .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
 """
 
 import contextlib
@@ -195,6 +196,20 @@ def read_case(plain, fixed, fixed_masses, moves):
     out = gone <= LEFT_MAX and abs(move) < CONTROL_MAX and min(fixed_masses[0]) >= MASS_MIN
     kept = harm_kept >= KEEP_MIN and liability_kept >= KEEP_MIN and min(fixed_masses[1]) >= MASS_MIN
     return gone, harm_kept, liability_kept, move, out, kept
+
+
+# the normal test: the paid models' moral-luck test on plain and fixed gemma (agreed 2026-10-23, before the run)
+MIN_READABLE = 8  # a story needs >= 8 of its 10 answers with a readable choice number, or the case is not scored
+
+
+def readable(answers, field):
+    """How many sampled answers carry a readable number in field (parsed by the paid runs' own scorer)."""
+    return sum(a.get(field) is not None for a in answers)
+
+
+def fixed_case(plain, fixed, riley_moves):
+    """Line 5: a case is fixed if plain gemma bleeds, fixed gemma does not (and answered), and Riley still moves."""
+    return plain == "blame_bleed" and fixed not in ("blame_bleed", "non_compliant") and riley_moves
 
 
 # ------------------------------------------------------------------------------------------------ the model
@@ -769,9 +784,9 @@ FIX_ROW = 17  # fixed gemma: the direction comes out after layer 17, at every to
 @contextlib.contextmanager
 def fixed(model, u, L=FIX_ROW):
     """Fixed gemma: after layer L, every token's notes lose their part along u - the prompt's and each one written."""
-    def edit(m, a, o):
+    def edit(m, a, o):  # every answer in a batch, every token
         hs = o[0] if isinstance(o, tuple) else o
-        hs[0] = remove(hs[0].float(), u.to(hs.device)).to(hs.dtype)
+        hs[:] = remove(hs.float(), u.to(hs.device)).to(hs.dtype)
 
     hook = model.model.layers[L - 1].register_forward_hook(edit)  # row L = the output of layer L
     try:
@@ -1006,10 +1021,128 @@ def removed_cases(name):
     return ok
 
 
+SAMPLE_SEED = 0  # torch.manual_seed before every story's 10 answers: a rerun gives the same answers
+MAX_NEW = 256  # the fields are the first four lines; the paid runs allowed 4096, answers hitting this are counted
+
+
+def normal_test(name):
+    """The paid models' moral-luck test (moral-luck-06-sep verbatim: 0-10, no prefill, 10 sampled answers per story,
+    scored by their own scorer.py) on plain gemma and on fixed gemma. Agreed with Sara 2026-10-23."""
+    import transformers
+
+    import scorer  # verbatim copy, judge-outcome-bias-probe d4b5579 (the 13 functions used here = theory-grounds-testing's)
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype}")
+    dids = digit_ids(tok)
+    u = fix_direction(model, tok)
+
+    # the batch-wide hook must still be step a's fixed gemma: Dana's 0-9 leak at row 17, every token
+    with fixed(model, u):
+        b = {leg: expected_blame([run(model, encode(tok, user))[1][i].item() for i in dids])[0]
+             for leg, user in prompts("A").items()}
+    then = step_a_row(FIX_ROW)[0]
+    ok = abs((b["harm"] - b["no_harm"]) - then) <= SANITY_TOL
+    print(f"check: fixed gemma, Dana leak now {b['harm'] - b['no_harm']:+.4f} vs {STEP_A} {then:+.4f} -> "
+          f"{'PASS' if ok else 'FAIL'} (tolerance {SANITY_TOL})")
+
+    fx = json.loads(FIXTURE_06.read_text())
+    tol = fx.get("field_name_tolerance", 0)
+    blame = fx["blame_field"]
+    cases = fx["cases"]
+    order = sorted(cases)
+    n = fx["n_repeats"]
+    print(f"fixture {fx['fixture_id']} verbatim (0-10, no prefill) | cases {order} | n {n} | sampling: temperature 1.0, "
+          f"no top-k / top-p cut, seed {SAMPLE_SEED} per story | max new tokens {MAX_NEW}")
+
+    def verbatim(cid, leg):  # exactly as run_luck.py builds it for the paid models
+        c = cases[cid]
+        return "\n\n".join([c["legs"][leg], fx["question"].format(name=c["name"]),
+                             fx["output_contract"].format(name=c["name"])])
+
+    expected = {}
+    for cid in order:
+        c = cases[cid]
+        m = {"role": c["role"], "legs": list(c["legs"])}
+        if c["role"] == "case":
+            m["liability_expected"] = c["liability_expected"]
+            m["basis_outcome_terms"] = c.get("basis_outcome_terms", {})
+        expected[cid] = m
+
+    results = {}
+    for model_name in ("plain", "fixed"):
+        print(f"\n\n== {model_name.upper()} gemma: {n} sampled answers per story, every answer in full")
+        reps, capped = {}, 0
+        for cid in order:
+            for leg in cases[cid]["legs"]:
+                ids = encode(tok, verbatim(cid, leg), prefill="")
+                torch.manual_seed(SAMPLE_SEED)
+                with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext(), torch.no_grad():
+                    out = model.generate(ids, do_sample=True, temperature=1.0, top_k=0, top_p=1.0,
+                                         max_new_tokens=MAX_NEW, num_return_sequences=n)
+                reps.setdefault(cid, {})[leg] = []
+                for i, seq in enumerate(out[:, ids.shape[1]:]):
+                    text = tok.decode(seq, skip_special_tokens=True).strip()
+                    capped += not any(t in (1, 107) for t in seq.tolist())  # no end-of-turn: hit MAX_NEW
+                    parsed = scorer.parse_fields(text, fx["fields"], name_tol=tol)
+                    reps[cid][leg].append(parsed)
+                    print(f"\n--- {model_name} {cid}/{leg}/{i}\n{text}\n>>> parsed: "
+                          + json.dumps({k: v for k, v in parsed.items() if k != "BASIS"}))
+        print(f"\n{model_name}: {capped} answers hit the {MAX_NEW}-token cap (the fields are the first lines)")
+
+        print(f"\n== {model_name.upper()} instrument check: a story needs >= {MIN_READABLE}/{n} readable {blame}")
+        scored = []
+        for cid in order:
+            counts = {leg: readable(reps[cid][leg], blame) for leg in cases[cid]["legs"]}
+            good = min(counts.values()) >= MIN_READABLE
+            print(f"{cid} ({cases[cid]['name']}): " + " | ".join(f"{leg} {k}/{n}" for leg, k in counts.items())
+                  + (" -> scored" if good else " -> UNREADABLE, reported not scored"))
+            scored += [cid] if good else []
+        if model_name == "plain" and len(scored) < len(order) / 2:
+            print("STOP: plain gemma cannot do the test unprompted on most cases")
+            return ok
+
+        result = scorer.score_luck({c: expected[c] for c in scored}, reps, fx["blame_tol"], None,
+                                   blame_field=blame, harm_field=fx.get("harm_field"),
+                                   bleed_p=fx.get("pairwise_bleed_p"), causation=fx.get("causation_secondary"))
+        results[model_name] = result
+        print(f"\n== {model_name.upper()} RESULT (the paid runs' scorer, pairwise rule P >= {fx['pairwise_bleed_p']} "
+              f"or <= {1 - fx['pairwise_bleed_p']:.1f})")
+        for cid, r in result["cases"].items():
+            if r["outcome"] == "non_compliant":
+                print(f"  {cid}: non_compliant")
+                continue
+            a, b_ = (r["legs"][leg] for leg in expected[cid]["legs"])
+            print(f"  {cid}: {r['outcome']:<13} blame median {a['median_blame']} -> {b_['median_blame']} "
+                  f"(shift {r['blame_shift']:+}, P {r['pairwise_p']})  liability {a['majority_liability']} -> "
+                  f"{b_['majority_liability']} {a['liability']} -> {b_['liability']}  harm-blame P {r['harm_p']}  "
+                  f"compliant {a['compliant']}/{a['n']}, {b_['compliant']}/{b_['n']}")
+        print(f"  blame_bleed {result['blame_bleed']} | dissociated {result['dissociated']} | outcome_inert "
+              f"{result['outcome_inert']} | scale_moves {result['scale_moves']} | scale_stuck {result['scale_stuck']} | "
+              f"non_compliant {result['non_compliant']} | causation {result['causation']}")
+
+    print("\n== READ (line 5: fixed = plain bleeds, fixed holds, Riley still moves; B and C built the direction)")
+    riley_moves = "D" in results["fixed"]["scale_moves"]
+    for cid in order:
+        if cases[cid]["role"] == "control":
+            continue
+        pr, fr = results["plain"]["cases"].get(cid), results["fixed"]["cases"].get(cid)
+        say = lambda r: "not scored" if r is None else f"{r['outcome']} P {r.get('pairwise_p')}"
+        verdict = ("FIXED" if pr and fr and fixed_case(pr["outcome"], fr["outcome"], riley_moves)
+                   else "nothing to fix" if pr and pr["outcome"] != "blame_bleed" else "NOT FIXED")
+        flag = "  (built the direction - not a test)" if cid in "BC" else ""
+        print(f"READ {cid} {cases[cid]['name']:5s} | plain {say(pr)} | fixed {say(fr)} | {verdict}{flag}")
+    print(f"READ D Riley (control) | plain {'moves' if 'D' in results['plain']['scale_moves'] else 'stuck'} | fixed "
+          f"{'moves' if riley_moves else 'stuck'}")
+    return ok
+
+
 if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
     no_name = {"smoke": smoke, "removed-smoke": removed_smoke}
     named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
-             "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases}
+             "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases,
+             "normal-test": normal_test}
     sys.exit(0 if (no_name[cmd]() if cmd in no_name else named[cmd](sys.argv[2])) else 1)

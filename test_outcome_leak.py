@@ -10,9 +10,12 @@ import math
 
 import torch
 
+import scorer
+
 from outcome_leak import (
-    case_gate, cosine, expected_blame, fraction_removed, fraction_restored, gate, largest, left, liability_read,
-    outcome_direction, phrase_prob, read_case, read_curve, read_removal, remove, riley_gate, shrink, softcap,
+    case_gate, cosine, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, largest, left,
+    liability_read, outcome_direction, phrase_prob, read_case, read_curve, read_removal, readable, remove, riley_gate,
+    shrink, softcap,
 )
 
 
@@ -218,6 +221,39 @@ def test_new_cases():
         True, False)
 
 
+def test_normal_test():
+    # the worked example, through the paid runs' own scorer: plain Jesse no harm 6x5 7x5, harm 7x5 8x5
+    no_harm, harm = [6] * 5 + [7] * 5, [7] * 5 + [8] * 5
+    # harm 8 beats all 10 (50), harm 7 beats the five 6s (25) and ties the five 7s (25 x 0.5) -> 87.5 / 100
+    assert scorer.pairwise_p(no_harm, harm) == 0.875
+    assert scorer._two_sided(0.875, 0.8)  # >= 0.80 -> the outcome leaks
+    # fixed: the same spread in both stories -> P 0.5 -> holds
+    same = [7] * 5 + [8] * 5
+    assert scorer.pairwise_p(same, same) == 0.5 and not scorer._two_sided(0.5, 0.8)
+    assert scorer._two_sided(0.2, 0.8)  # two-sided: harm blamed LESS also leaks, at the boundary too
+    # the same through score_luck, as the paid runs call it (A case, D control; no principle gate here)
+    expected = {"E": {"role": "case", "legs": ["no_harm", "harm"],
+                      "liability_expected": {"no_harm": "OWES-NOTHING", "harm": "OWES-COMPENSATION"}},
+                "D": {"role": "control", "legs": ["careful", "careless"]}}
+    row = lambda b, lab: {"BLAME-FOR-CHOICE": b, "BLAME-FOR-HARM": 0, "LIABILITY": lab, "BASIS": "x"}
+    reps = {"E": {"no_harm": [row(b, "OWES-NOTHING") for b in no_harm],
+                  "harm": [row(b, "OWES-COMPENSATION") for b in harm]},
+            "D": {"careful": [row(2, "OWES-NOTHING")] * 10, "careless": [row(7, "OWES-NOTHING")] * 10}}
+    out = scorer.score_luck(expected, reps, 1, None, blame_field="BLAME-FOR-CHOICE", harm_field="BLAME-FOR-HARM",
+                            bleed_p=0.8)
+    assert out["cases"]["E"]["pairwise_p"] == 0.875 and out["blame_bleed"] == ["E"] and out["scale_moves"] == ["D"]
+    # readable: 8 of 10 with a number is enough, 7 is not
+    answers = [{"BLAME-FOR-CHOICE": 7.0}] * 8 + [{"BLAME-FOR-CHOICE": None}] * 2
+    assert readable(answers, "BLAME-FOR-CHOICE") == 8
+    # line 5: fixed = plain bleeds, fixed holds, Riley still moves
+    assert fixed_case("blame_bleed", "dissociated", True)
+    assert fixed_case("blame_bleed", "outcome_inert", True)  # held, even if liability stopped moving (reported)
+    assert not fixed_case("blame_bleed", "blame_bleed", True)  # still bleeds
+    assert not fixed_case("dissociated", "dissociated", True)  # nothing to fix
+    assert not fixed_case("blame_bleed", "dissociated", False)  # Riley stopped moving: the scale broke
+    assert not fixed_case("blame_bleed", "non_compliant", True)  # stopped answering in the format
+
+
 def test_shrink_and_rules():
     # the notes.md "read three things" table: Dana leak 2.72 -> 0.4 = 85% removed
     assert round(shrink(2.72, 0.4), 2) == 0.85
@@ -248,7 +284,7 @@ def test_shrink_and_rules():
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
-             test_liability_read, test_new_cases, test_shrink_and_rules]
+             test_liability_read, test_new_cases, test_normal_test, test_shrink_and_rules]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

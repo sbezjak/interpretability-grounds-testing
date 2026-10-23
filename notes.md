@@ -359,9 +359,49 @@ depend on the outcome. But it is not a clean fix: it fails on Kai, and on Dana i
 judgment. One direction holds most of the moral luck, tangled with a bit of what liability rightly uses. Two tested
 new stories (Quinn doesn't leak) are examples, not a rate. About gemma-2-2b-it only.
 
+### The normal test - plain vs fixed gemma (moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed)
+
+The test the paid models took, now on gemma - twice. `moral-luck-06-sep` **verbatim** (0-10 scale, no prefill, exactly
+the paid models' prompts), 10 sampled answers per story (temperature 1.0, fixed seed), scored by the paid runs' **own
+scorer** (`scorer.py`, copied verbatim from the public judge-outcome-bias-probe; the 13 functions used are identical to
+theory-grounds-testing's). The fixture's rule: P = share of answer pairs where the harm story gets the higher choice
+blame; P >= 0.80 or <= 0.20 = the outcome leaks. Agreed before the run: a case is **fixed** if plain gemma leaks,
+fixed gemma holds, and Riley still moves.
+
+| case | plain gemma | fixed gemma | median choice blame, no harm -> harm |
+|---|---|---|---|
+| **A Dana** | leaks, P 0.91 | **holds, P 0.55** | 3 -> 6 becomes **6 -> 6** |
+| **E Jesse** | leaks, P 0.825 | **holds, P 0.5** | 3 -> 6 becomes **6 -> 6** |
+| B Sam (built the direction) | leaks, P 0.85 | holds, P 0.68 | 6 -> 8 becomes 6 -> 7.5 |
+| C Alex (built the direction) | holds, P 0.685 | holds, P 0.53 | |
+| F Kai | holds, P 0.535 | holds, P 0.415 | |
+| G Quinn | holds, P 0.5 | holds, P 0.34 | |
+| D Riley (control) | moves, P 0.98 | **still moves, P 0.965** | 2 -> 6.5 becomes 3 -> 7 |
+
+Every one of the 280 answers was readable. For comparison, Sonnet 5.5 leaks on all 6 cases of the same test.
+
+**So - did we fix it?** For gemma, on this test: **yes, on both real test cases** (Dana, held out; Jesse, a story the
+direction never saw). Both leaked and both hold. Blame for the harm still follows the outcome (harm-blame P 1.0 in
+every case), liability is right 10/10 in both stories for Dana, Jesse, Sam, Alex and Kai, and Riley's real difference
+survives. Same pattern as step c: the fix works by **raising** blame for the lucky story (3 -> 6), not lowering it for
+the unlucky one.
+
+**The cost.** The removed direction carries "how did it turn out", and gemma uses that twice: wrongly ("it went fine,
+so the choice wasn't so bad" - the leak) and rightly ("nothing happened, so nobody owes anything"). Taking the
+direction out weakens the right use a little too: in Quinn's no-harm story fixed gemma says OWES-COMPENSATION in 4 of
+10 answers (plain: 1 of 10), although nobody was hurt. And Kai and Quinn tip slightly the other way (P 0.415, 0.34 -
+less blame after harm), not far enough to count as a leak. Small, measurable - but real.
+
+Fair claim: **a fix that works on the test, with a small, measurable cost** - not a perfect fix. Limits: two real test
+cases with 10 answers each (examples, not a rate); Jesse's plain P (0.825) was close to the line; the direction was
+built on our 0-9 prompts and used unchanged on the verbatim 0-10 ones; gemma-2-2b-it only.
+
+With this, harm / no harm closes where it started - on the outside test: plain gemma fails it on Dana and Jesse, fixed
+gemma passes, still tracking harm and liability.
+
 ### Next (agreed with Sara 2026-10-23)
 
-Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a and c are done** (above).
+Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a and c are done** (above), and so is the normal test. Then: **Neuronpedia** (one small step), then **b**.
 
 - **a) Make it sturdier** (fast, about one run). Remove the direction at **every token**, not only the last - does the
   leftover third go too? And **several random directions** (different seeds), so the control does not rest on one.

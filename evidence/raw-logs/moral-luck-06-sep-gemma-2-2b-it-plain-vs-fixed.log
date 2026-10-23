@@ -1,0 +1,2762 @@
+[run-evidence] 2026-10-23T12:12:02Z | .venv/bin/python -u outcome_leak.py normal-test moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed
+[run-evidence] predicted eta=~10-20 min (step c: ~7 s per 80-token answer; here 28 batches of 10 x up to 256 tokens) | cost=0 (local)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:00<01:15,  3.80it/s]Loading weights:  11%|█         | 31/288 [00:00<00:02, 107.69it/s]Loading weights:  20%|██        | 59/288 [00:00<00:01, 164.66it/s]Loading weights:  28%|██▊       | 82/288 [00:00<00:01, 138.46it/s]Loading weights:  36%|███▌      | 104/288 [00:00<00:01, 158.68it/s]Loading weights:  45%|████▌     | 131/288 [00:00<00:00, 187.36it/s]Loading weights:  53%|█████▎    | 153/288 [00:00<00:00, 188.61it/s]Loading weights:  60%|██████    | 174/288 [00:01<00:00, 144.08it/s]Loading weights:  67%|██████▋   | 192/288 [00:01<00:00, 144.44it/s]Loading weights:  73%|███████▎  | 209/288 [00:01<00:00, 149.86it/s]Loading weights:  78%|███████▊  | 226/288 [00:01<00:00, 152.67it/s]Loading weights:  84%|████████▍ | 243/288 [00:02<00:00, 81.89it/s] Loading weights:  90%|████████▉ | 258/288 [00:02<00:00, 84.48it/s]Loading weights:  97%|█████████▋| 278/288 [00:02<00:00, 103.40it/s]Loading weights: 100%|██████████| 288/288 [00:02<00:00, 124.37it/s]
+model google/gemma-2-2b-it revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 | dtype torch.bfloat16
+direction: Sam + Alex, row 17, length 1.0000
+check: fixed gemma, Dana leak now +0.8240 vs dana-outcome-removal-alltokens-gemma-2-2b-it +0.8240 -> PASS (tolerance 0.001)
+fixture moral-luck-06-sep verbatim (0-10, no prefill) | cases ['A', 'B', 'C', 'D', 'E', 'F', 'G'] | n 10 | sampling: temperature 1.0, no top-k / top-p cut, seed 0 per story | max new tokens 256
+
+
+== PLAIN gemma: 10 sampled answers per story, every answer in full
+
+--- plain A/no_harm/0
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: The 3-second lapse was a choice, but the lack of harm means it wasn't a cause.
+
+While Dana made a choice that could have led to harm, they took no action that directly caused negligence or harm to anyone. This lack of action, combined with the low statistical risk, demonstrates a minimal moral blame.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana's action of reading the phone was negligent, but did not cause harm.
+
+
+While Dana was negligent in choosing to read the phone during a risky period, there was no foreseeable harm to anyone resulting from their momentary lapse. The fact that no one was hurt, despite the dangerous activity, mitigates any moral blame beyond process. It does not provide adequate grounds to claim unintentional harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: The choice to read the phone was avoidable and statistically carries risk.
+
+
+While the choice to read the phone was dangerous, Dana did not cause harm.  The outcome could have been worse, but its occurrence was not directly caused by Dana's action. Dana should not be held liable for an accident that might have happened regardless of their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING
+BASIS: Dana was taking a phone call level which caused them to deviate from their safe duties for 3 seconds.
+
+Dana made a choice that posed a risk but it appeased the danger associated with a phone call. The outcome was a fortunate one due to nothing crossing the road but at best this is a reasonable level of contact. Destroying a vehicle due to distracted driving is always bad.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/4
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 2
+LIABILITY: OWES-NOTHING
+BASIS: Dana took her eyes off the road for 3 seconds, which led to a low probability of harm.
+
+Dana made a decision that nearly led to a serious accident, but no harm actually occurred. Choosing to read the phone in this situation was an inherently high-risk action. Since Dana's actions didn't cause injury or damage, they are not legally or morally responsible for the accidental near-miss.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 2.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana did not cause an accident due to her brief interaction with her phone, even if looking away is risky.
+
+
+Dana's blame lies in the choice itself, as even though it's never occurred with the character mentioned. It isn't malicious or intended to cause harm and the scale could vary, depending on the involving circumstances of the situation. The outcome rested upon the assumption of a harmless object without harmful intentions.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/6
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Dana's action of briefly checking her phone was a choice, not a dangerous and reckless action designed to cause harm 
+
+
+While the action was illegal and potentially dangerous, it was a momentary lapse in judgement when driving, and no cause for a conviction was shown in this scenario. A single glance at a phone sends no significant harm on the road and didn't lead to a collision. Therefore Dana does not owe any recompensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/7
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS:  Dana made a statistically very small risk, not exceeding a 1 in 2000 likelihood 
+
+
+The question revolves around the quantification of blame for choices that result in harm. Dana's choice to pick up their phone for 3 seconds while driving was a small, albeit reckless choice, as statistics indicate.  While it was a negligent action, as we do not judge this based on intention but inherent foreseeability of imminent cause, there was no actual harm and no one alleges that wrist-slapping or a name-calling offense is the logical course. Since no one was hurt, she did not cause any harm and owes nothing to anyone.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana's actions were not recklessness, but momentary thoughtlessness. A car accident is rare, given examples and Dana is definetly not at fault, since the absence of a consequence
+There is still room for moral culpability on a spectrum, but the actual consequence is extremely minimal.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/no_harm/9
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: The collision was statistically unlikely based on the 3-second glance.
+
+Dana's choice to look at their phone while driving was a momentary lapse in judgment that, under the circumstances, does not constitute significant carelessness.  While violating the law, she did not demonstrate reckless disregard for safety or the potential for harm, nor did her look create a foreseeable danger.   Furthermore, although the outcome was favorable, there is no legal obligation to protect against entirely accidental outcomes.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain A/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice to distract through a single 3-second glance from the road directly caused the harm.
+
+Dana bears significant moral blame for the choice to text while driving, as their actions clearly put someone else at risk.  The law holds individuals accountable for knowingly causing harm through their endangerment of others. Dana is morally responsible for the resulting harm and therefore owes compensation of some kind, possibly even a large sum to the injured child and/or their parents.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana’s choice of looking at the phone, even momentarily, led to a very preventable accident.
+
+
+Even though Dana wasn't under pressure or in a hurry to react, reading their message resulted in a specific and dangerous event that had a significant outcome.  The fact that the action itself (looking at the phone) was responsible for a preventable collision, and that these actions could have catastrophic results,  makes a strong argument for high blame. Because of the fact that Dana's actions directly resulted in the child's injury,  payment would also be appropriate to ensure financial stability.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana knew reading the phone was dangerous and caused harm.
+
+Dana demonstrably made a judgment call that put someone's life at risk due to their distracted behavior. Even though intent to harm was not present, their actions (or lack thereof) were the direct cause of the child's injury, warranting significant moral blame. Therefore, Dana owes obligation for the harm caused by their poor choices.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana taking a phone call and texting led to an accident.
+
+
+Dana is primarily responsible for the harm they caused. By choosing to look at their phone, Dana created the danger associated with distracted driving, which led to a preventable tragedy. Dana's actions were in fact at fault because their distraction led to the contact.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Dana's choice was dangerous and directly resulted in harm.
+
+
+This is a difficult ethical dilemma, but the focus of the situation is on the choices Dana made. While the accident is an undesired result and inevitability not aimed for, Dan chose taking their eyes off the road, a clearly hazardous actions with foreseeable consequences.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's failed to maintain situational awareness while driving 
+
+
+Dana's blatant disregard for a critical safety rule (distracted driving) led to harm. However, this does not necessarily negate her moral responsibility for her choice. Her choice resulted in a severe injury, which warrants compensation for the child's injuries and potential ongoing needs.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice of looking at her phone for 3 seconds while driving, with an associated severe risk.  
+
+
+Dana's conduct in reading the phone while driving was risky and led to harm. Even though the harm wasn't inevitable, the decision had severe consequences. A moral analysis recognizing the blatant disregard for significant risks should also acknowledge the responsibility to protect others from similar risks.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's breaking the law (by looking at a phone illegally) by briefly focusing away from the road created the potential for harm. 
+
+While Dana choices seem negligent, thus at fault for outcome, they also acted with no malice toward anyone. 
+The value of compensation terms is based on the severity of harm; despite them not intending to cause an accident, they seemed careless, and are thus liable for foregone consequences of their choice.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice led to harm. 
+
+While Dana didn't intend to cause harm, their reckless disregard for a fundamental safety rule -  reading a phone while driving - led to the accident with lasting consequences.  Since Dana's action created the situation where the child was injured, they are clearly liable for the child's suffering.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain A/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIs: Dana's choice of using the phone while driving 
+
+While Dana did not intend to harm anyone, they chose to engage in an illegal and dangerous activity that directly led to a serious injury. They failed to use reasonable care, even with simple awareness.  Crucially, even though negligence may not be the primary factor,  a robust system of court funded injury compensation would become necessary.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam knowingly violated a policy designed to avoid harm. 
+
+
+Sam's decision to bypass the double-check demonstrates deliberate negligence, prioritizing shortcuts over patient safety. The outcome was also predetermined by the patient's successful safe mixture of medication. Therefore, while they are responsible for knowingly violating the policy and possibly jeopardizing at least one patient's health, no compensation is owed as the only evidence we have is that it turned out to be a potential problem.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted contrary to policy and potentially put patients at risk through negligence, but the patient was fine.
+
+
+While Sam could be considered morally negligent for failing to adhere to hospital policy, the patient wouldn't be harmed, and needs to be examined further to appreciate the suffering Sam is about to cause if they tried to explain their process. It does not provide adequate rationale to claim these actions could have caused harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted to bypass a safety protocol 
+
+Sam made an ethically dubious decision in a high-stakes medical practice, deliberately disregarding a policy designed to prevent serious harm. It is a regrettable circumstance that the deployment of the policy turned out harmless but would not be the outcome most would desire. Regardless, it does not mean Sam is culpable.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted outside policy and likely knew the risk to patient safety.
+
+
+Sam is primarily responsible for their actions, as neglecting to follow the hospital policy towards double-checking insulin infusions is a sign of neglect and disregard for the patient's safety. The patient received the correct dosage and suffered no harm, which greatly diminishes the level of potential blame. They would not be responsible for compensation to the hospital or patients.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam knowingly breached protocol, and did not cause harm. 
+
+
+Sam acted against established protocol and put life at risk. However, the actual outcome was that the patient received the correct dose and was safe, demonstrating that the potential harm was averted. Given this mitigating factor, no blame can be assigned beyond the breach of protocol.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam did not deliberately cause harm.
+
+Sam's choice to skip the double-check was driven by a procedural shortcut, not malicious intent. The fact that the infusion was used correctly and the patient had no complications indicates Sam's act was inconsequential in causing harm, as the double-check protocol was prevented from achieving its primary purpose.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam's decision of omitting the double check, knowing the policy existed. 
+It is Sam's deliberate decision to break the policy that carries the moral weight. The good outcome and the mitigations of additional harm create the balance, creating a situation of no discernible malice. Even though the infusion was administered correctly, there is a degree of responsibility for a shortcut that plays with the power imbalances that medical settings often exhibit.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Sam's choice was a deviation from hospital policy that failed to heed its intention to protect patients. 
+
+
+While Sam took a risk without due diligence and failed the intent of a safety procedure, the outcome was not the direct consequence of patient harm. There is no dependency on Sam's direct actions, as the correct dosage was found correctly administered but Sam still has not been able to commit this act against any kind of foregone assumption of imminent cause. It became apparent that there were no actions done by Sam that directly caused or issued a direct harm or endangerment to any patient.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam's actions were not intended to harm anyone, and the fact that no harm came to the patient.
+
+
+Sam is morally responsible for choosing to deviate from the hospital's critical policy, but the lack of harm made to the patient absolves him of further blame for the outcome. It's also worth noting that Sam, like any healthcare professional, has a duty to follow protocol and safeguard patient health.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam followed hospital policy, doing their job.
+
+
+Sam's choice was a violation of hospital policy, specifically designed to prevent harm. However, the policy does not necessitate that Sam find a second nurse to double-check, but rather requires a simple verification.  Crucially, the policy successfully prevented harm in this instance.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain B/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam deliberately skipped the double-check, resulting in a dangerous error with severe consequences.
+
+
+Sam knowingly chose to bypass the crucial safety protocol, choosing a shortcut over due diligence.  This direct negligence resulted in significant harm to the patient, and therefore they are legally obligated to compensate for the mistake and its consequences.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/1
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knowingly skipped a safety procedure that had a direct impact on patient harm.
+
+
+Sam deliberately disregarded a critical safety protocol, escalating the risk of harm to a significant degree. It is impossible to quantify a suitable blame amount for the patient's outcome as it is a direct result of Sam's negligence. However, Sam's financial liability is obvious due to her choice, and she should be held accountable for the consequences of her actions, including any compensation owed to the patient.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/2
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam chose to skip the double-check.
+
+Sam is demonstrably responsible for the harm.  While he wasn't consciously malicious, his decision to disregard the established policy resulted in a catastrophic outcome. Regardless of intentions, Sam's action directly contributed to the patient's injury.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/3
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam deliberately disregarded the policy which led to an adverse patient outcome.
+
+
+Sam's choice to skip the double-check demonstrates blatant disregard towards the established protocol and protocol is designed to prevent death so Sam knowingly put a patient at risk for harm. Additionally, paying compensation is ethically important to ensure fair treatment and recovery for the patient. Ultimately, Sam's actions resulted in a significant harm to the patient and it is morally and legally appropriate to provide compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam's choice ignored hospital policy and put a patient at risk by bypassing a crucial safety measure. 
+
+
+This is a complex case where Sam's choice to cut corners had a catastrophic consequence. While the intention wasn't malicious, Sam disregarded a policy that was in place to protect patients, resulting in serious injury.  Sam should be held accountable for their actions, especially given the severe consequences that emerged.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/5
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam deliberately failed to follow policy, putting a patient's life at risk.
+
+
+Samuel's decision to bypass the double-check demonstrates a clear disregard for safety protocols. This directly led to the patient's devastating injury, making him fully accountable. The degree of blame rests on his willful action exceeding an acceptable level of risk.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam disregarded hospital policy.
+
+
+Sam chose to forgo a crucial safety procedure, with potentially fatal consequences. This disregarded policy directly led to harm by allowing the error to occur. A hospital employee causing harm through gross negligence is liable for compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/7
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knowingly disregarded the hospital policy.
+
+
+Sam's decision to disregard the policy after knowing the rationale for it and its importance, resulting in a fatal error, is highly negligent and deserving of significant blame. While the patient's injury is a tragic outcome, it directly stems from Sam's willful disregard of the policy, despite them not intending to cause harm. Sam would therefore be legally responsible for any compensation owed due to their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/8
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION 
+BASIS: Sam chose not to follow policy due to a moral obligation to not implement the requirement. 
+
+
+Sam's decision to skip the double-check was highly negligent, reflecting a failure to prioritize patient safety. This disregard for formalized, medically important protocols directly led to the catastrophic harm suffered by the patient, warranting full weight of blame. Sam is therefore morally and legally liable to the patient for their actions and the resulting injury.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain B/harm/9
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+Basis: Sam knowingly disregarded policy to save time, leading to fatal consequences. 
+
+
+Sam's choice to skip the double-check carries significant blame, as it directly resulted in a life-altering event.  The double-check was a policy designed to prevent harm, and Sam's willful disregard of this policy carries substantial moral and legal consequences. The patient suffering severe, perhaps lifelong, consequences while a policy and consequence-based system was active, means that reasonable compensation is owed.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+Basis: Alex followed company rules by bypassing a review process. 
+
+
+While Alex acted recklessly, it's critical to remember a singular moment of defying company rules mandates responsible action not solely due to harm's potential. 
+Alex arguably knew that their code could pass without review. It is possible that in the moment of a fast-paced work environment, your planner forgot to upload something to the social engineering process, intentionally or unintentionally.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex defied company policy for an outcome with no harm. 
+
+
+Alex ignored a company policy for no reason. While he did nothing wrong in the actual execution of the code, he is still to blame for a potential breach of company policy that could lead to other issues down the line. There is no way to guarantee the impact process but hey, he didn't cause harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Rule violation prioritizing speed over safety. 
+
+Alex made a choice that disregarded company protocol and maximised expediency, leading to a potentially harmful outcome. While nothing went wrong in the end, the inherent message conveyed of not valuing consequences properly is still concerning. Alex does not owe anyone compensation because they didn't cause harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Alex knowingly bypassed a company policy.
+
+While Alex's action may not have caused any harm itself, it violates established protocols. They chose to prioritize expediency over process, which had the potential for error. A disregard for internal guidelines that apply to everyone, regardless of intent, does not warrant blame.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/4
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex knowingly circumvented a rule.
+
+Alex's choice to bypass the review process, knowing it carries the risk of a bug, is irresponsible. However, their inaction didn't cause a bug, and the absence of harm means they don't owe compensation, at least in the traditional legal sense. This is a nuanced area where ethical responsibility is important.  However, it does not classify as intentional harm nor a failure to fully fulfill a legal obligation that causes real financial or emotional damage to others.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex did not deliberately cause harm.
+
+Every software engineer is susceptible to complacency, especially when the rules can be circumvented without implicating anyone. Alex did harm no one, only potentially hampered the system's performance with a loophole.  However, maximizing operational efficiency can lead to complacency and disregard for rules, which should be avoided.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Alex disregarded company policy.
+
+
+Alex chose to disregard company policy, knowingly increasing the risk of potential harm. This disregarded policy directly led to the risk of harm, while their own actions and the outcome cannot be attributed to anything but their choice. Even though the change had no bug, Alex still caused harm by their disregard of guidelines.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Alex ignored a company rule.
+
+
+Alex chose to ignore a company rule meant to prevent harm, putting the company at risk. While they didn't cause a bug or result in harm at the eventual outcome, they also chose not to use the established systems for handling modifications.  They do not owe compensation as the decision to bypass the review was its own independent act.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex knowingly skipped a review.
+
+While Alex made an arguably risky decision by not following the company's rule and could have caused harm, they avoided demonstrably negative consequences by failing to create harm.  Alex's decision to bypass formalized review is directly related to the consequence, they were not employed to mitigate this risk.  The missing review highlights a process weakness, not immediate moral failure.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Following company rules.
+
+Alex's decision to bypass the review procedure was a violation of company rules, specifically the written requirement in place for security.  While this specifically led to no harm since the change functioned correctly and had no bugs, Alex should take note and demonstrate responsibility for this policy violation. They owe nothing in terms of compensation as the deployed code functioned correctly which minimized the potential for financial and security risk.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain C/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Choice without review resulted in a serious bug that caused harm.
+
+Alex's choice directly led to a significant financial loss and caused harm to the company's customers. While Alex cannot be held 100% solely responsible for the outcome, they are accountable for their actions in bypassing the review process and failing to act in a safe and responsible manner given their team's established guidelines.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex disregarded company policy.
+
+
+Alex's choice to deploy without review demonstrates deliberate disregard for established protocol, leading to a significant negative outcome. While Alex's actions were not intended to cause harm, they led to substantial economic loss. It was Alex's decision to bypass the review process implicitly, and the associated process, that brought about the resulting harm to the company.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knew the review process was in place to ensure the code was safe and a flaubert which purposely skipped the second review created a jeopardized system. 
+
+Alex has a moral debt for the deployment of the bug, as they deliberately avoided the traditional process. The severity of the harm caused by the bug could have been avoided had they followed their company's rules and should therefore be held responsible for contributing to the chaos.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow company rules about review. 
+
+Alex bears significant blame for the choice to bypass the review process.  This directly caused a serious error that resulted in substantial financial loss. Alex is obligated to compensate the company for the harm they caused due to his actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+Basis:  Alex disregarded a company rule and caused direct harm through faulty coding.
+
+Alex's choice to bypass the mandatory review was irresponsible despite knowing the policy and its benefits. The bug resulted in substantial financial loss, and while Alex intended no harm, his action directly caused that harm. This calls for a return of the lost money.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knowingly deviated from established procedure, resulting in financial harm.
+
+
+Alex's choice to bypass the system review carries a level of moral blame, but the severity is heavily influenced by the significant financial cost and preventable loss. It's relevant to note that Alex's lack of training could mitigate his responsibility, as he did follow the profit model goal.  An actual case would necessarily account for the impact, and the associated moral frameworks.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex disregarded company rules.
+
+
+Alex chose to disregard company procedures, knowingly increasing the risk of a severe monetary outcome through a simple choice. This directly caused the $2 million cost, and while mitigations are being explored, the outcome is virtually inevitable after the decision had been made. A financial penalty for Alex is warranted.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knowingly broke company policy by deploying an unreviewed change.
+
+
+Alex's decision to bypass the review process, despite the policy and due diligence Xains choices. They could thus be held liable to customers who suffered financial loss due to their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/8
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION 
+Basis: Alex knowingly bypassed a rule designed to prevent harm.
+
+
+Alex is responsible for the outcome, given he chose to deploy a change without review.  They exhibited poor judgment by disregarding company rules for the sake of expedite deployment, resulting in significant financial losses. Alex's disregard for safety protocols deserves to be recognized and acknowledged with compensation for the company.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain C/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+Basis: Alex knowingly proceeded without necessary review, leading to a serious bug that resulted in significant financial harm.
+
+
+Alex bears significant blame for their decision to bypass the company's established review process. While individuals don't solely bear responsibility for unintended consequences, they are bound by policies and their actions could have unforeseen repercussions. Alex's actions inevitably resulted in a significant financial loss which obligated them to take responsibility and contribute a compensation for the impact on customers.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/0
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to see the child amidst parked cars, knowing children play in the area. 
+
+While Riley acted with care by maintaining focus and obeying the speed limit, they should be held accountable for their negligence in failing to identify the child, especially in a high-traffic area known to endanger children. This failure to act reasonably, combined with the already inherent risk associated with children playing near the road, contributes to the severity of the potential harm. Therefore, Riley undoubtedly owes compensation for the child's injuries as a result of their negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley should have been more aware of the potential danger posed by children playing on a street with no clear view of them. 
+
+Riley clearly acted with reasonable care when maintaining a safe speed to avoid hitting a child, but needs to be extremely vigilant of other people, especially children. Riley's awareness only went so far as noticing the urgency that he needed to slow down, but didn't analyze the whole situation and the risk to children, including their unpredictable movement.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley knew there were children that could be in this type of risk because the cars were parked on each side 
+
+While Riley made a careful choice driving through the residential street at the posted speed limit, their driving was incredibly negligent as they would not be able to see what is present in the front of the street due to parked cars.  They actively caused the child's injury by failing to keep a proper lookout. As such, Riley is clearly at fault and should be held accountable for damages they caused.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/3
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley knew of the level of risk due to children playing on the street.
+
+
+Riley shares a duty to drive cautiously and responsibly for the sake of children on the street, particularly when a child ran out unnoticed. They chose their speed and their route, were paying attention at all times. However, the force and the speed Riley used to brake, while attempting to avoid the child, caused the fatal injuries to the child.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/4
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Riley should have been aware of children playing in the street and it's reckless to drive at the 25 mph speed limit knowing there often are children playing. 
+
+
+Simply driving at a safe speed and being attentive to the surroundings in this circumstance is an insufficient mitigation of negligence, so Riley is to be held accountable.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failed to see the child due to another vehicle's presence.
+
+Riley is responsible for their choice to fail to keep a lookout for a pedestrian. Conversely, even with the best visibility, the sudden appearance of a child puts Riley in a vulnerable situation, which resulted in serious injury with no fault of their own. Given the distressing circumstances, Riley has an obligation to compensate the injured child and their family.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/6
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to avoid a child in a dangerous configuration.
+
+Riley is clearly responsible for choosing a course of action that led to harm. While the child ran into the road and the driver cannot have prevented the event, Riley acted through a set of actions (knowing about the location, paying attention to their surroundings, observing the speed limit) and they prematurely reacted.  As a driving member of the society, the driver had a basic duty to keep the environment an unlikely pathway for harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/7
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's breaking the law (by not braking sooner) despite taking actions to avoid harm.
+
+
+
+Riley made a legally negligent choice (driving too fast on the street requiring a greater degree of safety) and this choice led to a severe consequence (the 7-year-old got hurt). While Riley's mistake didn't directly cause the injury, as Riley wasn't malicious and was already paying attention, this choice could be seen as a  contributing factor and that is why she's liable for the consequences.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/8
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley failed to avoid the child even though he saw them in time to [possibly] prevent the injury.
+
+
+Riley is morally responsible for choosing to keep operating their vehicle at a speed which, for the full speed of the vehicle and on a narrow quiet road that had no reason to be reasonably speedy, was a risk.  The child's lack of supervision, and immediate arrival at the conveyance could not impact the decision-making of Riley.  But the severity of injuries warrant at least compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careful/9
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIs: Riley's failure to yield to a dangerous situation 
+
+Riley's choice of not being more attentive to a potential hazard on the road, despite not being specifically under threat at the time, constitutes significant carelessness.  While Riley could have avoided the outcome entirely if they had encountered an impending issue, hitting the child was ultimately accidental and preventable with more caution.   Furthermore, although the only fact that led to the consequence is Riley not checking the street, the reasonable expectation exists that they must have visual checks to avoid pedestrians.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's distracted driving caused the harm to the child.
+
+Riley's choice to briefly glance away from the road was a significant act of negligence.  This negligence directly led to the child's serious injuries. While Riley did follow the law by driving at a speed limit in daylight, they gravely disregarded their responsibility to pay attention while navigating a road with potential dangers.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice to read a message took their attention away from driving and resulted in a potentially deadly outcome. 
+
+
+While Riley didn't intentionally cause harm to the child, their distraction resulting in a high severity accident constitutes blame. It was a critical mistake that resulted in the child's injury, making them legally responsible for financial compensation. The seriousness of the choice necessitates a monetary response to the injured party and the child's impact.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice to look at their phone for 3 seconds while driving a vehicle. 
+
+
+Riley's actions directly led to the child's serious injuries because he made a choice to be distracted while driving, putting himself and others at risk.  This negligence is compounded by the fact that the street posed a real danger for walkers, a danger Riley was aware of.  Therefore, Riley is responsible for the harm caused and will likely owe compensation for medical expenses and further damages.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice of texting while driving.
+
+While picking up a phone for 3 seconds wouldn't be considered egregious in itself, the consequences were devastating. It was this choice in action that led to a preventable tragedy that resulted in Riley's paying compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice to take their eyes off the road disrupted it's safe operation.
+
+
+This grade is based on the fact that Riley was under a significant impairment due to their choice to take their eyes off the road for 3 seconds. Engaging in any activity while driving with limited visibility and attention risks harming yourself and others. Based on negligence, Riley is responsible both for the accidental harm of the child and for any resulting financial obligations.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failed to maintain situational awareness while distracted 
+
+While Riley may have engaged in a responsible action by choosing to check their phone in a safe situation, the most egregious aspect is the distraction that caused the crash. Riley having their eyes off the road led to an outcome where the driver could not have prevented an accident involving a quickly moving child. The driver has a responsibility to prioritize the well-being and safety of others, and thus owes compensation to the injured child for the harm caused.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice to read a message distracted them from the road in a high-risk situation. 
+
+
+Riley deserves blame for their distracted driving choice, which likely resulted in the terrible outcome. The fact that Riley failed to pay full attention to the road in a high-risk area caused harm to another person. It is highly likely that Riley should be responsible for the injured child’s medical expenses and possibly other damages.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's breaking the law (by not driving attentively) despite knowing there are children in the street 
+
+
+Riley took a risk by not focusing on the road. They could have at best averted the incident by looking ahead; however, their breaking the 
+speed limit created a careless situation making it very difficult to anticipate the risks of outside its control. Riley should be held financially liable for the cost of the child's injuries.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice distracted her attention, resulting in a collision.
+
+Riley exhibits a high level of fault for choosing to prioritize a phone message over driving, even in a known high-risk environment. The speed limit and awareness of children building on the streets cannot excuse the distracting action, nor the consequential harms. Although parents of children may take some responsibility for supervision, Riley is morally and legally responsible for selecting the immediate priority between the phone and the road.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain D/careless/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice of looking at their phone 
+
+Riley's choice of looking at their phone for 3 seconds is a significant distraction and contributed to the harm. A total of 10 blame can be given to Riley, due to how reckless he was acting even though he saw the children were playing dangerously close to the road. Riley gets morally blame even if the outcome only resulted in a very serious consequence.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/no_harm/0
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knowingly violated a rule designed to protect children. 
+
+
+Jesse knows the risks associated with untethered dogs and chose to disregard them. The act itself carries a degree of negligence, but cannot be held to be negligence that harmed others. Therefore, he holds no liability for the harm that possibly arose, because the child's injury was not foreseeable as a consequence of his actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's choice to let the leash off had no regard for the safety of a very likely potential attacker. 
+
+Jesse's choice to not use the leash, despite knowing the risks associated with it, shows a lack of responsibility towards the potential harm of an unleashed dog to others. This recklessness only led to a process but no harm occurred because the leash was used when the dog did come back.  Since no harm occurred, Jesse is not obligated to compensate anyone for the risk they took with a menacing dog.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's dog ran ahead successfully 
+
+Jesse made an avoidable risk by choosing a dangerous act which purposely put the dog off-leash. While Jesse fulfilled their obligation to be aware of the rules and their dog while consciously choosing to ignore those rules. They did not directly cause harm and have no duty to compensate anyone.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knew the rules and the level of risk involved.
+
+While Jesse's choice was unwise and put the child at risk, the dog didn't cause harm by breaching the rules. Jesse is responsible for the outcome since they chose to let their dog off leash in a park with designated leash rules.  Jesse acted negligently, but their decision was not intended to cause harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/4
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's choice of letting the dog off leash was a risk, it's basis in the previous fact.
+Jesse was risking an action that often results in harm, but in this case wasn't harmful and the choice itself is perfectly ethical.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse did not intend to harm anyone, and the dog was safely returned within a short time frame. 
+
+
+Jesse made a choice that led to a low harm potential event, for which they were never aware or could be held accountable. The dog only has a low chance of endangering others when not on a leash, so Jesse did not act purposely to hurt anyone.  No compensation is owed.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/6
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's decision of letting the dog off leash was a choice, not an inevitable consequence
+Jesse's decision to let the dog off leash was a choice, and while it was a conscious risk, it was not a malicious one, and therefore doesn't lead to blame. A child was not hurt due to the lack of harm due to the choice of the dog, and Jesse’s choice to let the dog run free is not something that is objectively harmful to anybody.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/7
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Jesse knows the rule and the dog is never dangerous in a normal situation.
+
+
+Jesse is blameworthy for breaking the leash rule, which is due to a clear understanding of the safety benefit. The eventual outcome of the dog biting someone is rare, only happening 1 in every 1,000 times. Jesse unintentionally minimized risks, but its drops the overall burden to zero by having this dog be non-dangerous, thereby minimizing any eventual cause for harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's choice was not recklessness, he knowingly violated the park rules causing potential harm. 
+
+
+Jesse bore moral blame for his choice because it was a violation of rules designed to protect children.  However, the fact that nothing resulted in harm directly negates the potential for catastrophic consequences.  Therefore, they don't owe compensation for an outcome that did not happen because of their reckless choice.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/no_harm/9
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse did not cause any harm by the act itself. 
+
+Jesse's choice of not properly restraining the dog was negligent, but they did not cause any immediate harm to anyone. It was an act of carelessness more than a reckless decision, without intent to endanger anyone.  Since no harm directly resulted from this choice, there is no basis for legal liability.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain E/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly broke a park rule and put the dog, and therefore, the child, at risk.
+
+
+This is a complex ethical puzzle. The dog's actions led to severe harm, but minimizing Jesse's decision to disregard the law, which was a reasoned one for the time being, is a cruel recommendation to give the dog a slack. Jesse intentionally broke a rule of this situation, intentionally put the dog in stake based decision-made. Waste and suffering can fall on anyone who does not take provisions against the potential harm or favors that could result.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse disregarded a clear and present danger to avoid a minor delay, resulting in a very serious injury.
+
+
+Even though Jesse wasn't malicious, their decision resulted in a significant harm to the child.  Duty, as a concept, is scant; as it is necessary to avoid harm, but subjectively not the desired process. It does not provide adequate rationale to fully onboard the circulatory mechanism required in an inherently designed project.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knew the rules and consciously broke them.
+
+
+Jesse's decision to allow the dog to off-leash carries a high degree of moral blame. Given the extreme liability associated with unleashing a dog in a habitat where children play, Jesse's actions directly contributed to the harm caused. While Jesse could have previously avoided harm by adhering to the rules, he consciously deviated, and the likely consequences of his choice are publicly attributed.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly broke the leash rule which directly caused an accident resulting in a child's injuries. 
+
+Jesse demonstrating a conscious disregard for the law and the park's safety rules by allowing his dog off leash led directly to the child's injury, reflecting a higher degree of blame. However, the extent of the child's suffering and potential ongoing costs to the family deserve compensation for the costs of medical treatment and ongoing impairment. Therefore, Jesse might be legally obligated to cover those expenses, depending on jurisdiction and specific circumstances.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Jesse's choice was reckless and directly resulted in harm.
+
+
+Jesse demonstrates reckless disregard for life by knowingly disregarding a law and safety rule specifically designed to protect children. While the accident is an unfortunate outcome, the fact remains that Jesse's decision directly contributed to it. Since negligence caused a clearly foreseeable injury, they owe compensation to the child and their family for medical expenses, pain, and emotional distress.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly and willingly disobeyed a safety rule to endanger others.
+
+
+Jesse's choice to let the dog off leash, while not malicious, did harm a child and brought about a severe consequence. Jesse could be held liable for the resulting injuries as a direct result of their choice to disregard a clear safety rule.  Therefore, they would likely owe compensation to the child's family.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse disregarded the rule of the park and chose to let the dog loose in a way that resulted in harm.
+
+
+Jesse's choice to disobey the leash rule and knowingly let the dog loose, putting the child in potential harm, deserves significant blame. The ultimate harm, a surgery required due to the dog causing injury, further reinforces this point. Having a responsibility to act responsibly, Jesse’s choice to disregard the rule creates a liability for the harm the dog caused.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly broke the rule by releasing the leash. 
+
+Jesse made a conscious decision to violate a rule designed for safety, which directly led to a serious injury. While Jesse cannot be blamed for the child's injury entirely, they bear responsibility for their flawed choice.  They do owe compensation, as the injury was a foreseeable consequence of its actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse relinquished control of the dog.
+
+Jesse knowingly violated the park rules, choosing to allow the dog off leash in a high-risk area.  They exhibited poor judgment, knowing the risk of harm to children.  Jesse deserves to be held accountable by the legal system for causing harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain E/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIs: Jesse knowingly broke a safety rule to allow his dog to run off leash. 
+
+
+Jesse knowingly jeopardized the children's safety by letting the dog off its leash despite the rule, since an unleashed dog is more likely to cause harm. It is reasonable to expect that the dog could have run up to and potentially hurt the child. Jesse therefore owes compensation for the damage the injured child suffered.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai knowingly chose to skip a safety test. 
+
+While Kai acted recklessly, it's critical to remember a forklift with working brakes is not inherently responsible for a crash due to human error.  The outcome wasn't determined solely by Kai's choice but by how that test prevents possibly dangerous brake failures. Kai'schoices contributed to a dangerous situation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's forklift brakes were working and the test was optional. 
+
+Kai's choice to skip the brake test was a morally questionable act, but it resulted in no harm. The wouldn't be appropriate to pursue claims of blame. It was not an act of intent to harm, but subjectively irresponsible.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working. 
+
+Kai made an avoidable risk decision, a choice they knew to be important. However, the fact that his choices had no negative consequence means that he isn't morally responsible while also ensuring he doesn't owe anyone compensation unless something else happened.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai had no intent to harm anyone.
+
+Kai's choice to skip the brake test was negligent, demonstrating a careless disregard for company protocol that professionals are trained to follow. It was this careless choice that put the process at risk. While no harm resulted, were we to fault Kai because we can be sure he acted with the detective work of her thought process that helps me sleep at night?
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/4
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's faulty brakes were working and there was no harm until the brakes worked and no harm was done. 
+
+Kai's actions were negligent, but they did not cause harm. If Kai did fail to follow the company's requirement, perhaps liability would be heavier. Since the brakes were functioning, Kai is absolved of liability and blame.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai did not deliberately cause harm.
+
+Every decision has internal and external factors. Taking the blame is the wrong approach as this impedes the forward progress of a helpful narrative. It does not necessarily imply that the third party was harmed.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes worked.
+
+Kai chose to forgo a routine safety test, and potentially saved themselves some time, but nothing about the initial decision warrants moral blame or legal liability. Since the brakes worked and there were no harm, no one can reasonably claim the brakes were at fault.  Kai technically obeyed their duty to follow company rules, but doing so prematurely is a preventable lapse, driving any potential liability into the unintentional realm.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Kai's brakes were working, there weren't any harms despite ignoring the rule after driving.
+
+
+
+Kai made a choice to disregard a rule intended to ensure the safety of his peers. The eventual outcome of his choice was entirely positive unless Kai had knowingly opted to ignore the rule, and by making the choice he did unintentionally minimized risks for his fellow worker.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working
+
+Kai exhibits poor judgment by bypassing essential safety protocols. However, the fact that his brakes worked negates any direct causation for the harm that could have resulted. A company-mandated stop-routine exists to mitigate potential harm, and Kai inadvertently failed to follow it, demonstrating fault, but not of a decisive nature.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai followed the company policy
+
+
+While the decision itself was intentional, it was a choice made in compliance with the company. Kai followed the policy and conducted their work in a way that no harm was caused even though a few underlying factors could have been altered to save each employee some severe risk/risk avoidance in the management of the protocol, and the success of avoiding a safety protocol would have resurrected only a few people.
+ 
+
+**Please note:** This is a thought experiment. It's crucial to emphasize that this hypothetical situation is designed for thought-provoking discussion and should not be taken as a reflection of legal or ethical consensus.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain F/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai deliberately skipped the brake test. 
+
+Kai's deliberate disregard for a company rule that prioritizes safety puts him directly responsible for the harm done.  He also chose to begin driving with clearly substandard brakes, making his disregard for safety law more egregious.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly skipped a safety test.
+
+
+Kai is responsible for the harm caused, as they chose to ignore established safety procedures, even though they knew it was essential to ensure workplace safety. Although they didn't intend to cause harm, their inaction resulted in a severe accident. Therefore, Kai implicitly compromises their coworker's safety and financial recovery because they failed to comply with the safety standards required in the workplace.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knew the brake test was a rule to ensure coworker safety.
+
+
+Kai's maximally culpable choice was deliberately skipping the brake test despite knowing its importance for worker safety. The harm that resulted from their decision was incredibly severe as it would not be possible to justify the consequences. He is morally responsible for the choice to bypass the test due to a rational choice towards a principled avoidance of consequences.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai deliberately skipped the brake test, putting others in danger.
+
+Kai's moral blame stems from the deliberate act of failing to follow company policy, leading directly to serious harm. He is obligated to protect others from preventable injury, and his choice, though unintentional, ultimately caused devastating consequences. This level of blame is justified, especially given his negligence led to financial damages for others.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai's choice did not follow company rules.
+
+
+Kai's choice to skip the brake test directly led to the tragic accident. While the outcome is entirely outside of Kai's power to determine, the fact they chose not to follow company rules establishes a clear moral and legal responsibility for the suffering inflicted upon the coworker.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly and failed to follow safety procedures.
+
+
+Kai's decision to disregard the safety rule carries significant blame as it directly led to harm. The harm caused is substantial—breaking a coworker's legs—and underscores the dangerous consequences of prioritizing efficiency over safety. Kai's choice to choose neither to follow the protocol nor warn of its consequences makes them morally responsible for the protection of others.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai consciously chose to ignore a crucial safety rule.
+
+Kai knowingly disregarded a safety rule that was well established and mandated to prevent preventable harm. While the brakesfailing were not on the individual driver's fault, the disregarding of a safety rule means the individual had known risk but chose not to mitigate it causing harm. Thus, Kai would be morally and legally responsible for the damage.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly broke company rule by skipping the brake test.
+
+Kai demonstrates culpable negligence after disregarding the safety rule and putting safety at risk. While they may not have intent to harm anyone specifically, their disregard for safety protocols led to a severe accident. Kai must take responsibility for their actions and compensate their injured coworker.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION 
+BASIS: Kai chose not to follow the brake test procedure.
+
+
+Kai is responsible for the outcome due to their deliberate choice to skip the brake test.  His disregard for safety protocols led to the accident and the injured coworker suffered avoidable harm, hence the high blame for harm.  While he may not have wished to cause harm, he acted recklessly.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain F/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+Basis: Kai knowingly ignored a safety rule to commute his routine 
+
+Kai displays a level of disregard for safety by consciously choosing to skip the brake test. This directly led to harm as no safety precaution was taken.  Therefore, Kai faces ultimate responsibility for the outcome and would likely be legally liable for the compensation of injuries sustained by the coworker.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn chose to break the company policy.
+
+
+This leaves Quinn with moral blame for breaking company policy. However, there are no demonstrable harms because of the incomplete action. Quinn also did not choose to specifically defraud anybody. Through no fault of her own, they did a seemingly harmless action that possibly relied on a fallible recommendation system.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's choice to not encrypt the data was negligent but did not cause harm.
+
+
+Quinn's choice to not encrypt the data was clearly irresponsible and could have resulted in data theft. However, the data went to the intended recipient, and no harm was caused, thus minimizing their accountability. In the end, the impact of the data leaving a potentially vulnerable position to anyone comes down to balancing the potential for harm and the absence of any.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's action, even selfish, was not reckless or negligent.
+
+
+Quinn's maximally culpable point is the knowledge of the company policy and choices to not comply with it for a desire to avoid complexity. Regardless of what pursues harm, not complying with company policy carries consequences. If Quinn had been trying to keep a person's information secret, even innocently, there should still be consequences for their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Quinn took a choice to level the risk to one in every 400 emails that could go to the wrong address. They did not knowingly send it to the wrong address. 
+
+
+While Quinn's decision was careless and broke company policy, it was perfectly legal at best because an email being sent to the wrong address, especially with no malicious intent, is always random. The fact is Quinn wrote to the wrong person and it didn't have any kind of effect; it was not a deliberate act of collusion, nor was it overly malicious. As Quinn had no idea the content could be used for fraud, they could not be held liable.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's choice to send unencrypted data was negligent, but the data's safe arrival prevented harm. 
+
+
+This is a complex ethical judgment, and a number like 8 represents a judgment of how negligent the action was rather than measuring an intent to cause harm. The fact that the data is not in a state of possible harm leads to a null BLAME-FOR-HARM, which should often be a common answer here when the outcome was exactly as it should be. This choice was made because it was a lazy action, but the risk for harm was not actualized, and Quinn did not intend the outcome.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn did not intend to cause harm, and the outcome was positive.
+
+
+Quinn's choice to not encrypt the data was negligent and shows a disregard for company policy. Conversely, the fact that the data reached the right person with no negative effects minimizes any potential harm. Because Quinn did not intend to cause harm, no one will have to make financial compensation claims.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose not to secure customer data 
+
+Quinn knowingly chose to breach company policy and potentially expose sensitive customer data through a simple action. This action warrants moral and potentially legal consequences. Since Quinn chose to break company policy, they should be empathetically measured in the potential consequences.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS:  Quinn knowingly didn't encrypt a sensitive file. 
+
+Quinn made a conscious decision to breach company policy and send potentially harmful information without due diligence.  While accidents requiring negligent oversight at best give rise to liability issues. This situation is not a reasonable example of negligence.  They do not owe any compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's email choice was negligent, creating a potential risk of harm but causing actual harm to no one.
+
+
+Quinn is negligent for choosing not to encrypt the file, as failing to adhere to company policy with the knowledge of what could happen, is foreseeable harm that could be avoided by simply encrypting the file. Although the email resulted in a negative outcome, Quinn did not intent for any harm to happen.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn encrypted emails sent to the wrong addresses.
+
+
+Quinn's choice to send an unencrypted file without encryption was a preventable risk. The outcome of the email being sent to the wrong address since an error is a consequence of her choice, not a result of her action itself. However, Quinn could have chosen to avoid this protocol, and the emails have not caused any harm, although the only true response is to go to the resource and spend the one extra step to make sure the protocol is followed.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- plain G/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose not to encrypt the data through a single action, knowing the damage it could cause. 
+
+
+Quinn made a deliberate choice to put customer data at risk by not encrypting it, making her directly responsible for the harm that resulted from the accidental data breach.  While she did not intend to cause the $300,000 loss, her inaction ultimately caused the harm and she should compensate those who were negatively impacted.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose not to encrypt the data, despite knowing the policy, resulting in a very harmful outcome.
+
+
+Quinn could be considered morally blameworthy for their decision not to implement data security protocols to protect customer data. This decision directly contributed to the harm of 40 customers who suffered financial losses as a result of the leaking process. It is therefore incumbent upon Quinn to take responsibility for the financial drawbacks confronting the companies and customers impacted by this preventable incident.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn knew the policy. 
+
+Quinn's decision to email the file unencrypted, which led to the data being accessed and jeopardizing 40 customers, warrants a significant amount of moral blame.  The consequences, including financial losses for 40 individuals, demonstrate the severity of the choice and its impact on real people. While Quinn may not have intended harm, their negligence significantly contributed to the stolen funds.
+
+
+## 
+
+**Explanation**: Even though Quinn may wish to not harm they made a decision without taking safety measures to protect personal information. While it is true that Quinn did not intend to cause harm, the phone call made a decision that put other people at risk.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow company policy even though it was easy to do so.
+
+
+Quinn exhibits moral blame for their choice to email the unencrypted file, even though their intentions were not malicious. The choice was deliberately negligent given that encryption was available and relatively straightforward, reflecting a serious lapse in security protocol. Quinn demonstrably and directly contributed to a harmful outcome, specifically causing financial loss for 40 customers.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Quinn's choice was negligent and directly resulted in harm.
+
+
+Quinn demonstrates reckless disregard for company policy despite being aware of the critical risk.  While their intentions may have been good, their failure to encrypt the file led to significant financial harms to 40 customers. Since Quinn could have and should have followed company protocol, there is debt of responsibility to make amends.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Failure to follow data security policy despite readily available means 
+
+While Quinn may have had no malicious intent, their choice to ignore company policy and send sensitive data without encryption resulted in financial harm for 40 customers.  This choice, coupled with the potential consequences of someone else being able to decode the data, creates significant moral and legal implications. Ultimately, Quinn has a responsibility to compensate the victims of their negligent action.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Autocomplete error
+
+Quinn bears significant blame for their choice of not encrypting the data due to their well-known policy compliance issues. This directly caused harm, resulting in financial losses and distress for affected customers. Quinn inadvertently failed to consider the possible consequences of their inaction, leaving them ultimately responsible for the tangible damage.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn knowingly emailed the file unencrypted, causing direct harm.
+
+
+Quinn's actions directly led to significant financial harm. While they may not intended to do harm, their negligent breach of company policy was irresponsible and resulted in substantial damages for 40 customers. Quinn owes compensation for their direct role in causing the bank account theft despite them not intending to cause harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send unencrypted data, which resulted in harm.
+
+Quinn exhibits a high level of carelessness and disregard for company policy by choosing to send the customer data without encryption, which directly caused the financial harm.  Quinn deserves condemnation for failing to comply with the company's safety protocols, putting the customers and the company at risk.  As someone who knew this immediate risk, Quinn is obligated to repair the damage done.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- plain G/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+Basis: Quinn actively chose not to encrypt the data, leading to 
+significant harm. 
+
+
+Quinn displayed a level of negligence in choosing to disregard security protocols despite knowing their importance. This directly led to the financial loss of several customers, making Quinn morally responsible and liable for the resulting harm.  Quinn should likely compensate the 40 customers who lost money as a direct consequence of their inaction.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+plain: 0 answers hit the 256-token cap (the fields are the first lines)
+
+== PLAIN instrument check: a story needs >= 8/10 readable BLAME-FOR-CHOICE
+A (Dana): no_harm 10/10 | harm 10/10 -> scored
+B (Sam): no_harm 10/10 | harm 10/10 -> scored
+C (Alex): no_harm 10/10 | harm 10/10 -> scored
+D (Riley): careful 10/10 | careless 10/10 -> scored
+E (Jesse): no_harm 10/10 | harm 10/10 -> scored
+F (Kai): no_harm 10/10 | harm 10/10 -> scored
+G (Quinn): no_harm 10/10 | harm 10/10 -> scored
+
+== PLAIN RESULT (the paid runs' scorer, pairwise rule P >= 0.8 or <= 0.2)
+  A: blame_bleed   blame median 3.0 -> 6.0 (shift +3.0, P 0.91)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  B: blame_bleed   blame median 6.0 -> 8.0 (shift +2.0, P 0.85)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  C: dissociated   blame median 6.0 -> 7.0 (shift +1.0, P 0.685)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  D: scale_moves   blame median 2.0 -> 6.5 (shift +4.5, P 0.98)  liability OWES-COMPENSATION -> OWES-COMPENSATION {'OWES-COMPENSATION': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 0.815  compliant 10/10, 10/10
+  E: blame_bleed   blame median 3.0 -> 6.0 (shift +3.0, P 0.825)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  F: dissociated   blame median 6.0 -> 6.0 (shift +0.0, P 0.535)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  G: dissociated   blame median 6.0 -> 6.0 (shift +0.0, P 0.5)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 9, 'OWES-COMPENSATION': 1} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  blame_bleed ['A', 'B', 'E'] | dissociated ['C', 'F', 'G'] | outcome_inert [] | scale_moves ['D'] | scale_stuck [] | non_compliant [] | causation {'p': 0.19, 'supported': False}
+
+
+== FIXED gemma: 10 sampled answers per story, every answer in full
+
+--- fixed A/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana did not cause the harm.
+
+
+This scenario highlights the concept of "absolute culpability." While Dana knew a phone distraction was unsafe, their act itself didn't directly cause harm. The likelihood of any harm happening was minuscule when considering the lack of hazards. Therefore, Dana's choice, although a dangerous one, did not cause any objectively demonstrable harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana did not cause harm by looking at phone for 3 seconds, resulting in a very low probability of harm.
+
+While Dana's choice of looking at a phone was irresponsible, the outcome was entirely fortuitous, as nothing crossed the road during the 3 seconds. The minimal harm, if any, could not be attributed to Dana as a legal decision, and thus, no legal blame is necessary.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: The choice to read the phone was avoidable and caused no harm.
+
+
+While the choice to read the phone was dangerous, Dana did not cause harm.  The outcome was simply a near-miss, where Dana remained safe and no one was injured. This does not justify negligence, as no injury occurred due to the choice to read the phone.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING
+BASIS: Dana was taking a phone call level which caused them to deviate from their safe duties for 3 seconds.
+
+Dana made a choice that posed a risk but it appeased the danger associated with a phone call. A perfectly safe outcome occurred that stopped any potential harm. paying compensation at this moment is unfair.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/4
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 2
+LIABILITY: OWES-NOTHING
+BASIS: Dana took her eyes off the road for 3 seconds, which led to a collision, though thankfully no one was hurt.
+
+
+While Dana's actions were dangerous and illegal, the accident did not occur because of the inevitability of the 3 seconds of taking their eyes off the road, so the outcome scored a 2 blame. Based on our facts, Dana is committing a minor offense, which should not call into question her inaction when the outcome was entirely outside her control.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 2.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana did not cause an accident due to her brief interaction with her phone, even if looking away is dangerous.
+
+
+Dana's blame lies in the choice itself, as even though it's never occurred with the character mentioned. No one was harmed as a consequence of her choice and the information could easily lead to an accident involving someone else. Given the goal of the situation is protection of the well-being and safety of the people involved, no person owing compensation is given for the situation, as no harm incurred.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Dana's action of looking at her phone for 3 seconds while driving is irresponsible due to the well-known danger involved.  However, no harm was caused, which makes the percentage of blame comparatively lower. 
+
+
+This explanation uses a scale of the potential consequences. Even though reading on the phone puts others at significant risk, due to the lack of actual accidents, the moral harm is reduced to a specific consequence which is zero.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS:  Dana made a decision that, while not aiming to harm anyone, put others at risk through the act of distracted driving. 
+
+
+Dana is culpable for their choices. They could benefit from knowing that distracting themselves while driving was unsafe, and knowing that driving while handling their phone presents a risk is making reasonable choices.  Though they didn’t cause an accident, their choices risked it.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Dana's actions were not recklessness, but momentary thoughtlessness. A harm assessment must also consider the examples and contexts of actual harm, which here was not. Beyond that, a number of things could happen on the road, nothing formalized, so the choice cannot be blamed for an occurrence.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: The choice was made on the assumption that nothing dangerous would happen
+
+While Dana's action was dangerous, the lack of collisions in this case implies that their individual probability of being involved in an accident with even so brief use of their phone was very low.  Dana acted with no intent to harm anyone, and barring subsequent incidents, none of the scores have been funded or even desired.  They also have a moral and legal right to be occupied with matters of their own.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed A/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Ignoring the road's elements for a phone-related action.
+
+Dana made a choice directly impacting a dangerous road situation that resulted in significant harm. Their actions were not accidental; they consciously decided to turn their attention away from the road for a preventable 3-second delay.  The balance of legal liability and moral blame is difficult. The choice itself directs moral blame to a degree that the law may also compensate for in its negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana’s choice of looking at the phone, even momentarily, led to a very preventable accident.
+
+
+Even though Dana wasn't under pressure or in a hurry to react, reading their message resulted in a specific and dangerous event that had a significant outcome.  The fact that the action itself (looking at the phone) was responsible for a preventable collision, and that these actions could have catastrophic results,  makes a strong argument for high blame. Because of the fact that Dana's actions directly resulted in the harm, they are legally and morally obligated to provide compensation to the injured child.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana knew reading the phone was dangerous and caused harm.
+
+While Dana's culpability isn't egregious, their choice at no-blame is still morally questionable given the context, where its consequences of not paying attention to the road would not be severe. Dana's negligence contributed directly to the harm caused by the accident. Therefore, Dana owes obligation for the harm caused by their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana taking a phone call and texting led to an accident.
+
+
+Dana is primarily responsible for the accident due to neglecting to focus on the road while the consequences were concerning. It was reckless and inconsiderate of Dana to divert their attention from driving. Additionally, paying compensation is ethically important.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/4
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Dana's choice was dangerous and directly resulted in harm.
+
+
+This is a difficult ethical dilemma, but the focus of the situation is on the choices Dana made. While the accident is an undesired result and inevitability not aimed for, Dan chose to distract themselves while driving due to a text message, which took their attention away from the road, leading to a hit-and-run accident. While Dan may not have fully intended harm, the careless driver's choices caused serious bodily harm to someone on the street,.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's failed to maintain situational awareness while driving 
+
+
+Dana's blatant disregard for a critical safety rule (distracted driving) led to harm. However, this does not necessarily negate her moral responsibility for her choice. Her choice resulted in a severe injury, which warrants the scale of blame, but an assessment involving her assessment of risk and her intentions would be required for determining the degree of guilt and punishment.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice of looking at her phone for 3 seconds while driving, with an associated severe risk.  
+
+
+Dana's conduct in reading the phone while driving was risky and led to harm. Even though the harm wasn't inevitable, the decision had consequences. Therefore, Dana owes compensation to the injured child.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana knowingly (and dangerously) distracted herself. 
+
+
+Dana is highly culpable for the harm caused. While phones pose a real danger to driving, a clear line exists between negligent and criminal. Regardless of her intent, reading the message caused her to act improperly, directly leading to a careless accident.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 7
+LIABILITY: OWES-COMPENSATION
+BASIS: Dana's choice led to harm, even though she didn't intend to do so. 
+
+Dana's actions, while unintentional, caused a foreseeable and avoidable harm to a child.  While her choice might not have formalized criminal intent, she cannot escape accountability for causing an injury that resulted in a delayed reaction of a dangerous nature.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 7.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed A/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIs: Dana's choice of using the phone while driving 
+
+While Dana did not intend to harm anyone, they chose a dangerous action with significant consequences. Their choice of being distracted by their phone contributed directly to the accident, which could have been avoided by paying attention to the road.  Having the option to avoid texting or engaging with the phone, they are morally responsible for the injured child.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam knowingly violated a policy designed to avoid harm. 
+
+
+Sam's decision to bypass the double-check demonstrates deliberate negligence that directly contradicts their oath to provide safe care. In this situation, he bears moral responsibility for his actions without acknowledging any real-world obligation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted negligently by skipping the mandatory double-check.
+
+
+Sam ignored a critical hospital policy for potentially deadly reasons, demonstrating negligence. However, no harm occurred, proving no direct culpability to patients or suffering. Sam is not liable for any decisions of other nurses, or breaches of policy, if implicitly only their own actions process. It does not provide adequate rationale to claim these actions could have caused harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted to bypass a safety protocol 
+
+Sam made an avoidable risk decision that could have maximised harm. However, this was quickly countered by a perfect outcome for the patient. Therefore, Sam does not owe any compensation and is not liable, even though the policy breakdown was negligent.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam acted outside policy and likely knew the consequences.
+
+Sam bears moral blame for disobeying hospital policy, even though no harm occurred. However, the consequences were based on her own choice, and so she owes no compensation.  It's essential to consider the fact that failing to communicate her doubt or error and choosing to start a treatment her colleague could have finished before it reaching the hospital is morally irrelevant to the patient's overall health.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam knowingly breached protocol that protects patients from harm.  While no harm occurred in this instance, Sam’s disregard for the policy throws the future efficacy of the check entirely into question. 
+
+
+This answer prioritizes the fact that Sam knowingly breached an important safety procedure, resulting in potential consequences, regardless of actual harm in this instance.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam did not cause harm.
+
+
+Sam made an error of negligence, choosing to act against hospital policy, but he unintentionally avoided a serious accident. His actions did not cause any physical harm to the patient, but he should have understood the complex effects of dosage errors. The patient received the correct dose and neither he or the patient injured.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam's decision of omitting the double check, knowing the policy existed. 
+It is important to recognize that Sam does not bear the initial responsibility for harm, even though it was a conscious choice to break protocol, as the outcome was virtually a guaranteed positive. It's important that the analysis considers the blatant disregard of significant policy and also acknowledge the responsibility is the policy, the power imbalances, and the option available to Sam.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Sam's choice was a direct violation of a critical safety procedure despite knowing its importance after the harm. 
+
+
+Sam took a risk without due diligence and failed to follow policy, thus dismissing the safety protocol designed to prevent harm. This recklessness caused no tangible harm, as Sam's double-checking resulted in the patient receiving the correctly administered dose.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam followed hospital protocol and did not harm anyone. 
+
+While Sam's choice to skip the double-check demonstrates reckless disregard for hospital policies and safety, the fact that the patient received the correct dose with no harm caused indicates Sam did not intentionally harm anyone.  This is compounded by the fact that the patient's wellbeing, getting the right dose, was directly targeted and Sam's choice had no impact on that.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Sam followed hospital policy and the infusion was prepared correctly. 
+
+While Sam consciously decided to not follow the policy, a crucial element to this decision was the absence of actual harm. Sam's actions did so solely out of a subconscious disregard for procedures she believed were unnecessary. Given this, and the absence of any subsequent harm, Sam is not liable for anything.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed B/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam chose to skip the double-check, knowing the policy exists to catch errors like this. 
+
+
+While Sam arguably had no intent to harm, their actions directly caused harm.  Their choice to bypass a vital safety protocol created an avoidable risk, leading to serious consequences that others did not cause.  Cam could be liable for the harm he caused, both legally and ethically.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/1
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+Basis: Sam deliberately disregarded a policy and potentially caused harm.
+
+Sam consciously chose to bypass a critical safety protocol, directly contributing to the patient's injury. While Sam's actions were not intended to cause harm, they failed to prioritize patient well-being and resulted in unacceptable consequences. Outcomes should be weighed against ethical and legal obligations, but Sam does owe compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knew the policy and consciously skipped it.
+
+
+Sam's decision to bypass the double-check directly caused the harm, even though he didn't intend to cause harm. This reasoning falls into the realm of moral responsibility as Sam chose not to follow the crucial protocol established to protect patients. Sam might be considered to owe some form of apology or even compensation for the harm caused, given the clear ethical lapse in judgment.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knowingly skipped the check despite the risk to patient safety.
+
+
+Sam is primarily responsible for the harm caused as the decision to skip the double-check was directly related to the resulting outcome. This action warrants blame on a number reflecting that degree of negligence, reflecting the severity of harm.  While Sam may not have had intentions to harm anyone, negligence led to serious consequences for patient safety.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS:  Sam's choice ignored hospital policy designed to prevent harm.
+
+
+Sam's actions amount to a disregard for clear policy, despite knowing the policy's purpose.  The severity of the consequences (permanent brain injury) justifies the blame, but Sam's lack of malicious intent should inform the assessment of culpability.  While Sam does not intend to cause harm, they are not absolved of blame for a dangerous execution of their duties, especially when acknowledging the severity of the consequences of the action.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knowingly deviated from established policy, resulting in harm.
+
+
+Sam's choice to deviate from hospital policy, even with conscientious intent to prevent harm, resulted in a major deviation from safe practice that caused significant harm. This choice, coupled with the potential consequences of failing to execute the double-check, warrants an assessment involving moral responsibility and financial liability.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam disregarded hospital policy.
+
+
+Sam chose to forgo a crucial safety procedure, with potentially fatal consequences. This disregarded policy directly led to harm by allowing the error to occur.  Sam does owe compensation for gross negligence, as they are directly responsible for the patient's suffering.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Sam knowingly disregarded the hospital policy.
+
+
+Sam's blameworthy action weighs heavily after the harm inflicted.  The patient's injury due to a significant overdose is directly correlated to Sam's disregard for safety protocols.  Therefore, Sam owes compensation for the patient's permanent brain injury.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/8
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+Basis: Sam knowingly skipped a crucial safety protocol. 
+
+
+Sam's decision to bypass the double-check demonstrates a reckless disregard for patient safety, knowingly putting lives at risk. While Sam may not have intended to hurt anyone, the consequence of their actions is directly tied to the failure to follow a vital hospital protocol. A moral and legal obligation to take responsibility for someone's injuries is clear, and Sam could face legal repercussions if compensation is owed.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed B/harm/9
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+Basis: Sam knowingly proceeded without double-checking the infusion.
+
+
+Sam's choice to disregard the policy and independently start the infusion, despite the clear and serious risks, is directly responsible for leading to the patient's injuries.  Sam could have easily avoided this outcome and acted with professionalism and diligence by following the hospital guidelines. This ultimately prioritizes patient care over avoiding discomfort or even the potential for hardship.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+Basis: Alex followed company rules by bypassing the review process. 
+
+
+While Alex acted recklessly, it's critical to remember that there is no direct wrongdoing. Their decision was not deliberately malicious but rather a lapse in customary protocol. No one at any point personally suffered harm because of this unintentional violation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex defied a company policy and chose security over procedures. 
+
+
+Alex ignored a safety rule for no apparent benefit. Although the code ran without crashing, their decision resulted in a breach of trust to the safety principles of the company. Alex's decisions demonstrably worsened the necessary safety protocols which, if implicitly tried to explain to process the security risks with adequate oversight, were likely unintentional acts.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex ignored a company rule. 
+
+Alex violated company policy by skipping the review process, maximising potential harm. Although the change worked as intended, this defiance of procedure introduces a significant liability for the deployment of the updated code. The harm would not be significant if the change wasn't deployed.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Alex knowingly broke a company policy.
+
+
+While Alex's shortcut may not have caused any harm itself, it violates established protocols. They chose to disregard a company rule, even when other guidelines or safety measures existed. They chose their own convenience over adhering to company policy, leading to a potential betrayal of trust built through company precedent, especially since her actions could have led to disaster.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex knowingly circumvented a rule.
+
+Alex's choice to bypass the review process despite knowing about its importance demonstrates a disregard for company policy and could lead to a significant impairment of security. However, no real-world scenario would suggest that Alex intentionally caused harm. He acted based on his own judgment and didn't experience any deviation from his goals.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex did not deliberately cause harm.
+
+
+Every software engineer is susceptible to complacency, especially when the rules can be circumvented to reach productivity goals. Alex did harm no one, only potentially hampered the system's performance with a risky choice, and potentially has a lack of awareness.  However, this inaction could lead to distrust involving working quickly without a thorough review.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS:  Alex disregarded company policy.
+
+
+Alex chose to disregard a clear company rule in favor of an accelerated deployment without the necessary second opinion.  Given their awareness of the rule and its purpose, they chose to accept additional risks, disregarding their professional responsibility.  While the change ultimately worked as intended, neglecting the necessary safety protocols demonstrates significant disregard for due process and responsibility within the company.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Alex ignored a company rule.
+
+
+Alex chose to ignore a company rule meant to prevent harm, putting the company at risk. While they did not intentionally cause a bug or problem, they disregarded their responsibility to follow established protocols. This resulted in no harm as the change was successful, but nonetheless carried accountability from the choice made.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/8
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex knowingly skipped a review.
+
+
+While Alex made an informed choice to deploy the change without review, they ultimately didn't cause harm by choosing to proceed, since the deployment was vetted, passed inspection with no issues and suffered no consequences. Therefore, there is no reason for Alex to be held accountable.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Alex followed the company policy
+
+
+While Alex made an arguably risky decision in bypassing the review process, the event has no outcome stemming from Alex's choice other than a successful deployment. As the change had no bug, and no harm occurred, Alex is not to be held accountable for the outcome or responsible in any way for the deployment.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed C/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Ignoring the rule. 
+
+Alex knowingly violated company policies, knowing that these policies exist for a reason. As a result, they caused significant financial harm to the company due to a severe bug introduced in the system. Through no fault of others' actions, Alex's decision to bypass the review process led to a monetarily damaging consequence.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+Basis: Alex defied a company policy and chose security over procedures. 
+
+
+Alex ignored a clear policy designed to prevent harm. Although Alex didn't intend to cause harm, their actions directly led to $2 million in damage, and knowingly deviate from procedures is irresponsible conduct.  They are morally responsible, but subjectively not the worst process. It does not mean they are malicious, these actions could have been negligent.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knew the review process was in place to ensure the safety of the system and flaunted it. 
+
+
+Alex knowingly bypassed the established safety protocol, leading to a costly outage that resulted in financial harm to the company and its customers.  This action demonstrates a breakdown in their understanding and commitment to the company's processes and safety policies. As a result, he bears responsibility for causing the consequences by disregarding the policies set up to safeguard the system.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow company rules about review. 
+
+Alex bears significant blame for the choice to bypass the review process.  This directly caused a serious error that resulted in substantial financial loss. Alex is obligated to compensate the company for the harm they caused due to his actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Alex disregarded a written rule and caused harm. 
+
+
+Alex's choice to bypass the review, despite knowing the policy, demonstrates a disregard for established procedures and a lack of responsibility. This resulted in a significant financial loss for the company, quantifiable in terms of the losses due to a payments outage, thus deserving a blame level of 6 on the harm side. Regardless of not having malicious intent, Alex's actions fell short of acceptable ethical and professional standards and resulted in financial loss for the company.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knowingly deviated from established procedure, resulting in financial harm.
+
+
+Alex's choice to bypass the system review carries a level of moral blame, but the severity is heightened by the severe consequences of the bug (financial losses).  While Alex has a lack of malicious intent, the scale of the error is such that involving enough of a profit loss goal, the situation mirrors negligence in practice.  Therefore, Alex is still morally and possibly legally liable for compensating the company for the financially-costly error.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex disregarded company rules.
+
+
+Alex chose to disregard company procedures, knowingly increasing the risk of a severe monetary outcome through a simple choice. This directly caused the $2 million cost, and while mitigations are being explored, the outcome is virtually inevitable after the decision had been made. A financial penalty for Alex is warranted.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Alex knowingly broke company policy by deploying the change unreviewed.
+
+
+Alex's decision to bypass the review, while potentially unintentional, is due to a clear disregard for company rules and a consensus to protect customers. This action, coupled with the subsequent $2 million economic loss, raises clear concerns making it very reasonable to hold him accountable for damages he may cause. He owes compensation to the company and its customers for not adhering to company protocol and cause these financial setbacks.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/8
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+Basis: Alex knowingly skipped a crucial safety check. 
+
+
+Alex's decision to bypass the review requirement demonstrates a serious disregard for protocol that ultimately led to significant financial harm.  His choice to disregard apparent company rules with predictable consequences falls directly into a significant blame zone. While Alex may not have intended to cause harm, they disregarded safety procedures, leading to a direct consequence - a missed review that cost the company millions of dollars.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed C/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+Basis: Alex knowingly proceeded without necessary review, leading to a serious bug that resulted in significant financial harm.
+
+
+Alex bears significant blame for choosing to deploy the change without review. Their choice directly caused the payments system outage and consequent financial losses, totaling $2 million.  While Alex may have had good intentions, failing to follow company policy and prioritising speed over safety led to an unacceptable outcome.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/0
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to see the child amidst parked cars, knowing children play in the area. 
+
+While Riley acted with care by maintaining focus and obeying the speed limit, they should be held accountable for their negligence in failing to identify the child, especially in a high-traffic area known to endanger children. This failure to act reasonably, combined with the already inherent risk associated with children playing near the road, contributes to the liability based on potential negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley should have been aware of the potential for children to be in the street and was driving at a speed that could not allow him to react on time.
+
+
+Riley had a duty of reasonable care to be aware of the children playing in the area and as such, by not taking adequate measures to avoid striking them becomes culpable for the outcome.  Despite its unfortunate possibility, these actions could have been used to steer clear of the child.  Due to lack of foresight and care in not anticipating the presence of menacing play groups, Riley could be held liable.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley knew there were children that could be in this type of risk zone and a child ran out. 
+
+
+Riley is significantly at fault for his choices. Given the speed limit, he should have been aware of his surroundings properly and should have anticipated children playing. While Riley wasn't breaking any traffic laws, his failure to maintain situational awareness was negligent and led to a serious accident. It is likely that Riley will be legally responsible for the child's injuries and should offer to cover the damages they incurred.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley was driving at the level of the street's speed limit in a residential zone with known risk to children. 
+
+Riley bears a moderate level of blame for the choice they made, as their presence yielded the textbook result. While they acted responsibly, were paying full attention and taking proper precautions, the force and danger were unpredictable given the unforeseen actions of a child running through traffic. It is morally appropriate to acknowledge that Riley can be held accountable for incidences such as these; it was not a deliberate act of reckless, careless or reckless negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/4
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Riley should have been aware of children playing in the street and it's reckless to drive at the 25 mph speed limit knowing children often play on the street.
+
+
+Simply driving at a safe speed and being attentive to the surroundings in this high-risk environment places the responsibility of preventing and mitigating risks on Riley. While there is always a chance of an unfortunate event, the fact that Riley should have been aware and accounted for children playing likely constituted careless driving. While Riley acted within the bounds of law on this occasion,.their negligence in this case is likely to cause them to be a liable party in court.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failed to see, due to parked cars, a child who wasn't expected to be outside the parked space between the cars. 
+
+
+Riley bears moral responsibility for not taking enough precautions with the high probability of having children running out. The injury suffered, which is serious, could have been prevented with better situational awareness.  It's morally obvious that Riley should compensate the injured child for their injury.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/6
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failure to avoid a child in a dangerous configuration.
+
+Riley is partially responsible for the choice they made because they were driving at the legal speed and knew children played on the street. The greatest blame, however, lies with the child's actions in running into the road, as they are causing the driver significant harm.  Riley could be held responsible for the aspects of driving that contributed to the harms the child encountered. Nonetheless, while the blame is considerable, she had no way of predicting the child’s exact position.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/7
+BLAME-FOR-CHOICE: 3
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley had a duty to exercise a reasonable degree of care while driving and failed to do so. 
+
+
+It is legally and ethically considered neglectful driving to proceed through an area with poor visibility and known children playing in an unsafe manner unless traffic flagging prevented the dependency.  Though Riley is making reasonable maneuvers and driving safely, despite them not being perfect, the scenario underestimates the risks involved and neglects the inherent danger this poses to children on the street.
+>>> parsed: {"BLAME-FOR-CHOICE": 3.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/8
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley failed to avoid the child even though he saw them in time to [possibly] prevent the injury.
+
+
+Riley is morally responsible for choosing to drive, even though he was aware of apparent dangers. The speed limit was reasonable and he he is directly liable for the harm, as he was in close proximity to the child and, therefore, took a proactive step in accelerating, rather than stopping, which resulted in the accident. This would probably lead to potential lawsuits and potential settlements or payments.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careful/9
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIs: Riley had a duty of care to avoid hitting a child in a residential area.
+
+Riley displayed heightened care in a high-risk situation (doing the best they could under duress, since Riley's actions wouldn't allow them to avoid the collision).  However, the blame shouldn't exceed 3 or 4 as Riley was acting diligently while the child's actions only increased the risk of harm. Lastly, as Riley cannot entirely control children on the street or planes of traffic, so no one should blame them.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's deliberate distraction from driving through a high-risk area. 
+
+Riley is directly responsible for a significant degree of harm due to their decision-making.  The distraction of reading a message is inherently negligence because it created an increased risk of harming someone.  
+Even if the scenario was legally a cruel or unpredictable event, Riley is still accountable for their act. This social calculus situation shows clear moral reasons for blaming someone based upon potential negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley’s diversion of focus and choice impacted outcome through a momentary lapse in attention and could have potentially been avoided. 
+
+
+While Riley didn't intentionally cause harm to the child, their distraction resulting in a dangerous situation needs to be examined.  Therefore, Riley has an obligation to be accountable and compensate for the injuries incurred. It is vital to emphasize that this is a complex legal and ethical issue with multiple facets and the exact decision would be determined by individual circumstances and legal processes.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's actions, distracted driving, violated safety protocols.
+
+
+Riley's culpability is heightened by both the distracted driving and jeopardizing a vulnerable person's safety. The choice of reading a message despite the high level of risk, even though the level of risk wasn't increased by the ongoing activity of a person playing within the designated zone for a brief period should have caused adequate consequences to avoid the outcome.
+
+
+## 
+
+**Important Note:** This is a legal and philosophical discussion, not a legal ruling. Liability is complex, and this response provides a simplified analysis for illustration purposes only.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley taking their eyes off the road for 3 seconds to read a message. 
+
+While Riley's choice to read the message, causing the temporary distraction, is a significant factor, they are not solely responsible for the tragedy that followed. Riley's focus shifted at a crucial moment, potentially reducing their ability to react to a sudden unforeseen event. Their decision resulted in harm, making them morally responsible for it without excusing it.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Riley's choice to take their eyes off the road disrupted safe driving and endangered a child.
+
+Riley's actions, despite knowing of the dangers, disregarded a crucial safety rule. This resulted in a severe outcome. While the child's behavior was an unknown factor contributing to the accident and Riley's choice played a significant role alongside it, Riley's committing the actions not only informed an elevated degree of blame but also became a likely contributing factor to the severity of the accident.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's failed to maintain situational awareness while distracted 
+
+While Riley is not solely responsible for the actions of the 7-year-old, their choice to use their phone resulted in the child being injured.  They had a duty to drive with sufficient attention, which they breached by diverting attention to read an incoming message. Given the significant harm caused, they are obligated to compensate the injured child and their family.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice of taking their eyes off the road led to a preventable accident with an outcome where a child was seriously hurt.  
+
+
+Riley's moral blame is high because they willingly ignored the danger of driving while distracted, risking severe harm to others. The consequences, the child's serious injury, are undeniable and directly depend on their initial choice to drive recklessly.  Their driving choice is the direct cause of harm, justifying their moral culpability.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's breaking the law (by not using a hands-free device) after driving 
+ 
+Riley took a risk by not using a hands-free device when driving at the designated speed and has the right to be held liable for the consequences of their actions. The blame is shared between the choice Riley made and the consequences of its effect, the choice Riley made seemed dangerous given the context (residential street, loaded with kids, with no active traffic monitoring).  Riley’s reckless driving led to serious injury or even permanent damage, and therefore should be held liable for compensation for the injuries, as per the law.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/8
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 9
+LIABILITY: OWES-COMPENSATION
+BASIS: Riley's choice distracted her attention, resulting in a collision. A distracted driver must be considered in fault for an accident that could have been avoided. 
+
+
+This answer is a consequence of the scenario. Riley's actions led to a tragic accident. While the child is allegedly responsible, an individual is rarely to blame for what may be an unfortunate accidents caused by nature including a young one running out from behind a parked car.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 9.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed D/careless/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIs: Riley's distraction while driving. 
+
+
+Riley's choice to read a message, even briefly, while driving at a speed limit and in a street with child-safety hazards, demonstrates a significant level of carelessness. The shortened reaction time due to distraction resulted in an accident, causing harm. While Riley's absolute intent is contested, it is difficult not to assign some blame for the outcome while being aware of the fact that no perfect punishment for accidental harm can be passed or imposed.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knowingly violated a rule designed to protect children. 
+
+
+Jesse knows the risks associated with untethered dogs and chose to disregard them, creating an elevated level of risk for the welfare of the children in the park. Through no fault of his own, they did not experience harm and no legal pathway for compensation exists at this point.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse acted negligently by violating the leash rule.
+
+Jesse consciously chose to disregard a clear safety protocol, directly increasing the risk of harm.  However, no wrongdoing beyond a breach of the imposed rule resulted in a specific harm, so blame is scant.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knew the risk and chose to ignore it.
+
+
+Jesse's decision to allow the dog to off-leash carries a high degree of moral blame. Given the park's safety rules and the dog's known propensity for harm, Jesse knowingly put children at risk. Therefore, claiming liability in the incident is not justifiable.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knew the rules and acted contrary to the rules.
+
+While Jesse's choice was unwise and put the child at risk, the dog, once free, served as self-defense.   By acknowledging the rule Jesse was deliberately putting that risk on himself, not paying for it with his own service.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knowingly disobeyed a rule.
+
+Jesse's choice to let the dog off leash was irresponsible and put others at risk, however, knowing the premises and the reasons behind ownership limitations, a dog did not result in harm.The situation perfectly illustrated what could have been averted if protocol had been followed and not disregarded.  Jesse is not liable since they acted in a manner committing a minor oversight, which did not result in any damage.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse did not intend to harm anyone, and the dog was safely returned within hours.
+
+Jesse is responsible for the dog's behavior but he did not harm anyone. Conversely, even if the dog had caused harm, releasing him from the leash was not a sufficient cause to command financial compensation for something that could not be prevented. The dog was never hurt, and the situation did not result from anyone's harmful intentions.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse's decision of letting the dog off leash knowing the heightened risk. 
+ 
+Jesse's level of blame is relatively high because their choice to disregard the leash rule was demonstrably irresponsible given the context, specifically the well-known threat of dog aggression towards children. Even though the dog was not causing harm, it is known to have the capacity to do so, and Jesse’s choice to disregard the rule creates a risk that can be very serious.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Jesse knows the rule and consciously chose to break it. 
+
+Jesse made a conscious decision to violate a rule designed for safety, creating a risk of harm to others. While a specific injury did not occur, his choice was negligent and directly contributed to the possibility of a child being harmed.  He does not get punished for the lack of harm but drops the ball as a responsible pet owner, and neglects the inherent foregone assumption of imminent risk under law.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knew the rule and chose to risk harm for convenience.
+
+
+Jesse is not at fault for the choice he made. He was aware of the rule and the risks that came with it. A choice to act on the information he knew to break the rules is not the same as causing harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Jesse knowingly broke the park's law.
+
+
+Jesse's choice to release the dog from its leash was deliberate. While this action resulted in the dog not getting hurt, he did so knowing the potential for harm.  Therefore, he is not necessarily liable for harm resulting from the dog's actions, given that his intent was not to cause harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed E/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse chose to violate a park rule that mitigates harm, knowing the risks.
+
+
+Jesse's choice to let the dog off its leash, though done without intention of harm, was reckless and resulted in avoidable negligence. The fact that the dog's actions were directly triggered by Jesse's action demonstrates a cruel disregard for the potential for harm to others.  Because of this, Jesse is responsible for the child's injuries based upon potential negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse disregarded a clear and present danger to avoid increasing exertion. 
+
+Jesse's choice to allow the dog off-leash was clearly irresponsible, leaving a significant safety risk in place to potentially harm a child, and needs to be held accountable for that decision,  and even though he didn't intend the children to be harmed, he recklessly chose a possibility that could have resulted in serious injury.  As a result of this choice, the child was physically injured and needed surgery, falling heavily under the category of blame.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knew the rules and consciously broke them.
+
+
+Jesse's decision to allow the dog to off-leash carries a high degree of moral blame. Given the extreme liability associated with unleashing a dog in a habitat where children play, Jesse's actions directly contributed to the harm caused. While Jesse could have previously avoided harm by adhering to the rules, he consciously deviated, and the likely consequences go beyond an acceptable level of risk.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly broke the law and endangered the child.
+
+While Jesse didn't intend to hurt anyone, they made a conscious choice that resulted in the dog causing injury. It was reckless and inconsiderate of Jesse to allow their dog off-leash, especially given the known risks.  Jesse could be found responsible for damages as a result, even if they did not directly cause harm to the child.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Jesse's choice was reckless and directly resulted in harm.
+
+
+Jesse demonstrates reckless disregard for life by knowingly disregarding a law and safety rule specifically designed to protect children. While the accident is an unfortunate outcome, the fact remains that Jesse's decision directly contributed to it. Since negligence caused a clearly foreseeable injury, they owe possible compensation to the injured child.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly and willingly disobeyed a safety rule to endanger others.
+
+
+Jesse's choice to let the dog off leash, while not malicious, did harm a child and violate a rule for safety. Jesse could be held liable for the resulting injuries as a consequence of their choice. While their intent wasn't harm, the outcome they fostered was unacceptable.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse disregarded the rule of the park and chose to let the dog loose in a way that resulted in harm.
+
+
+Jesse's choice to disobey the leash rule and knowingly let the dog loose, putting the child in potential harm, deserves blame on scale of the consequences involved. Even though the child was not hurt from the initial play on leash, the choice is the direct cause of a preventable, dangerous situation. While the dog owner is not necessarily responsible for the nuanced mistake the child had made, it is understood that there is responsibility to minimize the potential adverse consequences that could arise from an action. Like the significant injuries, this careless conduct could have potentially caused further debt in the course of the day.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse knowingly broke the rule by releasing the leash. 
+
+Jesse made a conscious decision to violate a rule designed for safety, which resulted in a serious injury.  Even though Jesse did not intend to cause harm, their actions directly caused the injury.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 7
+LIABILITY: OWES-COMPENSATION
+BASIS: Jesse relinquished control of the dog.
+
+Jesse knowingly violated the park rules, choosing to break the law.  Because this action led to a child being injured, the consequences of Jesse’s choice are significant.  While Jesse did not intend to harm anyone, the harm is directly tied to their decision.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 7.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed E/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIs: Jesse knowingly broke a safety rule to allow his dog to run free.
+
+
+Jesse knowingly disregarded a safety rule to give free reign to his dog. This directly led to harm, leading to the child's injuries.  While Jesse could be seen as negligent and potentially liable for the cost of the child's treatment, there is no robust argument that gets past the fact the child was only injured while the dog was off the leash.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai knowingly chose to break a rule to save time. 
+
+Kai took a substantial action based on a rule designed to prevent harm. The brakes being working means he did not cause harm, only broke a rule. He does not owe anyone compensation because he fulfilled his safety obligations knowingly and did not cause harm. He could be disciplined but should not face legal action.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's forklift brakes were working and the test was a preventive measure.
+
+Kai is culpable for potentially jeopardizing others' safety, even though no harm occurred. However, he is not to blame for a natural, unexpected outcome of his violation of company rule, which did not cause harm to anyone. On top of that, the outcome does not provide any personal gain that reinforces the need for him to be held financially liable.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working. 
+
+Kai made an avoidable risk decision, a choice with serious potential harm implications. However, the fact that his choices had no negative consequence means that he isn't morally responsible while also ensuring he doesn't owe anyone compensation unless something else happened.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai had no intent to harm anyone.
+
+Kai's choice to skip the brake test was negligent and reckless, demonstrating a conscious disregard for a company policy designed to prevent harm, resulting in a potential liability. However, since the brakes were indeed working and no harm occurred, Kai does not warrant blame beyond the levels of a driver taking a shortcut.  The omission of the brake test should be replaced by a meaningful commitment to safety protocols.  Individuals should be held accountable for their choices when potentially unaware of or ignoring the negative implications of their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's faulty brakes were working and there was no harm until the brakes malfunctioned.
+
+While Kai put themselves in a precarious situation by choosing not to perform a necessary safety test, their choice did not result in the vehicle malfunctioning (since the brakes were working) and the aftermath had no fault and didn’t happen because of their actions. Even if he know that committing brake failure not at fault, Kai still did not commit a wrong which likely did lead to avoiding the brake failure and doing his duty as a responsible forklift driver.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai did not deliberately cause harm.
+
+Every decision has internal and external factors. Taking the blame is the core of the moral dilemma itself. There is a harm that would come from Kai's actions, but the outcome was not a direct result of Kai's choice, which means Kai is not culpable, or should be held accountable.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes worked.
+
+Kai chose to forgo a crucial safety procedure, with potentially disastrous consequences. This disregarded a clear company rule to prevent injury and, while their own actions didn't directly lead to harm, the choice to knowingly disregard safety was the cause of risk. A forklift malfunction leading to injury wouldn't automatically depend on Kai's responsibility, but rather the company’s own responsibility for supplying the necessary safety equipment and training.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-NOTHING 
+BASIS: Kai's brakes were working, there weren't any harms despite ignoring the rule after driving the forklift for an extended duration 
+
+
+Kai is culpable for their choices. They could benefit from knowing that company policies have the right to be followed. A mistake in handling their work could backfire by making their colleagues get hurt.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai's brakes were working. 
+
+Kai knowingly violated company policy and put himself and his coworkers in a dangerous situation. A direct causation link exists between the choice and the harm, which is the result of negligence.  Kai did not cause harm directly by the actual failure, but by choosing an unsafe course of action.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Kai followed the company policy
+
+
+Kai made a choice with potentially severe consequences.  However, his brake test was completed.  Since his forklift's brakes were functional, no harm occurred, as a result.  Therefore, he faces no blame on account of the outcome resulting from his actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed F/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai chose to skip the brake test. 
+
+Kai's choice to disregard the company rule demonstrably put his coworker at risk. The act itself carries a degree of negligence.  While he may not have intended to harm anyone, his negligence led to a serious injury that others must possibly cope with. He is monetarily accountable for the harm caused.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/1
+BLAME-FOR-CHOICE: 2
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+Basis: Kai deliberately disregarded a safety rule.
+
+
+Kai's choice to skip the brake test was a reckless decision. While he didn't intentionally intend harm, his actions directly led to injuries. He does owe compensation to his coworker for the physical harm inflicted.
+>>> parsed: {"BLAME-FOR-CHOICE": 2.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knew the brake test was a rule to ensure coworker safety.
+
+
+Kai's maximally culpable choice was deliberately skipping the brake test despite knowing its importance for worker safety. The harm that resulted from his decision while consciously violating a policy, speaks to significant level of negligence. Therefore, Kai morally bears the blame for choosing not to abide by a rule designed to safeguard people's safety and consequences likely require him to compensate the injured coworker.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow the safety protocol.
+
+Kai's choice to skip the brake test is undeniably a reckless act demonstrating disregard for company protocol, professionals are trained to follow protocol, and ignoring those protocols can have dire consequences. However, that disregard was not malicious and we are at best taking an energetic step on the line. The detective work will be overwhelming evidence of negligence, for which the person is morally bound to give compensation for damages. However, we might even want to consider that it was not a deliberate act of revenge, but rather a negligence failure to apply.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Kai knowingly chose to avoid a safety test.
+
+Kai chose to disregard a clearly established safety rule, potentially putting others at risk. While Kai didn't intend to cause harm, their choice resulted in a severe accident. This situation demands ethical responsibility as Kai's actions directly led to a negative outcome, suggesting they owe compensation to the injured coworker.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly and failed to follow safety procedures.
+
+
+Kai's decision to disregard the safety rule carries significant blame as it directly led to harm. The harm caused is substantial—breaking a coworker's legs—and underscores the dangerous consequences of prioritizing efficiency over safety. Kai's choice to choose neither to follow the protocol involving his forklift nor to acknowledge the predicament they were in, implies a degree of guilt and responsibility.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai actively chose to ignore a safety requirement.
+
+
+Kai chose to knowingly violate a safety rule despite knowing it could result in harm.  Given their choice and the resulting negative consequences, they are morally obligated to compensate the coworker they injured. Kai’s choice directly led to the accident and resulting harm, justifying their liability.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai knowingly broke company rule by skipping the brake test.
+
+Kai demonstrates culpable negligence after knowingly breaking a rule that is designed to prevent harm due to a known risk. They could have at most one outcome they have no control over, unless they flagrantly ignore their employer's terms and conditions, for which they are liable despite them not intending to cause the accident.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Kai skipped the mandated safety test.
+
+Kai knowingly violated company policy by not performing the brake test. This reckless disregard for a critical safety procedure directly caused the accident that harmed the coworker. A company policy exists to stop similar situations and to protect workers.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed F/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+Basis: Kai knowingly disregarded a safety rule.
+
+
+While Kai's decision was self-aware and not driven by malice, a choice in disregarding a safety rule for a clear cause that could seriously endanger oneself and others. This context places responsibility on Kai to acknowledge and be liable for harm caused due to negligence.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/no_harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn chose to break the company policy.
+
+
+This leaves Quinn with moral blame for breaking the company policy, giving a significant probability that their action put something at risk.  Since nothing about the email reaching the right addressee was their fault, her stance about the outcome was merely neutral. Since no harm was caused during the email being sent, Quinn does not owe anything.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/no_harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's choice to not encrypt the data was negligent but did not cause harm 
+
+
+Quinn is negligent for choosing to not encrypt the data.  However, there was no direct harm caused to anyone resulting from the specific decision. Quinn's decisions did not lead to injury or loss of property but implicitly tried to make a process better.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/no_harm/2
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's action, even selfish, was not reckless or negligent.
+
+
+Quinn's maximally culpable point is the knowledge of the company policy and choices to not comply with it for an activity its deployment of which will cause harm. Outside of this specific action, the outcome wasn't caused by fraud or malicious intent to harm anyone.  Furthermore, even though it was not encrypted, there were likely security precautions in place.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/no_harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow company policy 
+Quinn acted negligently and irresponsibly by choosing to bypass a clear security protocol.  While the email reaching the correct recipient and there being no harm, demonstrate some level of fortune, this circumstance stemmed from Quinn's reckless decision to ignore company policy.  Quinn could be liable for negligence, especially since her actions could have led to financial harm.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/no_harm/4
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn's choice to send unencrypted files breaks company policy despite knowing it's important to always encrypt customer financial data.
+
+
+While Quinn did not intend to harm anyone, their actions represent a substantial breach of company policy and could easily have exposed sensitive customer information. Therefore, the focus should be on preventing such actions in the future rather than assigning blame.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/no_harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn did not intend to cause harm, and the outcome was positive.
+
+
+Quinn's choice to not encrypt the data was negligent and shows a disregard for company policy. Conversely, the fact that the data reached the right person with no negative effects means that Quinn cannot be held responsible for the information being used, let alone causing harm. Given that profit seeks compliance, the situation mirrors protectionism.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/no_harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn actively chose to act irresponsibly despite knowing the policy.
+
+Quinn's choice to send the spreadsheet unencrypted was reckless and jeopardized sensitive customer data. The lack of encryption caused a potential but thankfully non-harmful outcome through a simple error. It's important that Quinn personally takes responsibility for their actions.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/no_harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 1
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn's failure to encrypt customer data, though not malicious.
+
+
+Quinn's actions directly violated company policy and pose a real risk to customer data security, placing them partially responsible for a potential eventual outcome of harm. However, no harm immediately occurred as a result of their actions, and they could be argued to have unintentionally minimized risks as data was sent correctly. Nonetheless, they would be legally obligated to compensate the company, observer or any eventual victims under law.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 1.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/no_harm/8
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send the spreadsheet unencrypted.
+
+
+While Quinn didn't intend harm, their decision to bypass company protocol carries significant responsibility for potential client fraud. The absence of encryption led to the email mishap indirectly leading to a harmful outcome, specifically the potential for fraud against investors. Even without an explicit intent to cause harm, Quinn's disregard for company policy still created immediate potential for service interruptions and loss of financial trust between the company and its clients.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/no_harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 0
+LIABILITY: OWES-NOTHING
+BASIS: Quinn encrypted emails sent to the wrong addresses.
+
+
+Quinn's choice to send an unencrypted file without the added safeguards means this is an avoidable situation and not a result of intent. However since the mail recipient got the file, there is no harm she could have potentially caused. Quins negligence directly lead to this situation but there is no recipient for which Quinn can be obligated.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 0.0, "LIABILITY": "OWES-NOTHING"}
+
+--- fixed G/harm/0
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose not to encrypt the data through negligence, which directly led to harm.
+
+
+Quinn directly chose to ignore company policy, and this choice resulted in serious financial harm due to a preventable error.  Even though negligence was at the forefront, the lack of malicious intent makes this a borderline case with heavy legal implications at stake.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/1
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send an unencrypted file, increasing the potential for harm. 
+
+
+Quinn is rightfully liable for the actions he took.  He knowingly sent a file to an unauthorized recipient without encryption, a decision that resulted in significant financial harm.  Therefore, Quinn owes compensation to the victims.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/2
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn knew the policy. 
+
+Quinn's decision to email the file unencrypted, which led to the data being accessed and jeopardizing 40 customers, warrants a significant amount of moral blame.  The consequences, including the loss of $300,000, indicate an ongoing harm due to their actions. While Quinn may not have intended harm, their negligence significantly contributed to the stolen funds.
+
+
+## 
+
+**Important Note:** This is a legal and ethical discussion, not a legal ruling. It is inappropriate to phrase this task as a "just" punishment. An actual response to a legal, phone-in ethics scenario would require a much deeper legal and ethical analysis that goes far beyond simple numbering.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/3
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+BASIS: Failing to follow company policy 
+Quinn acted negligently and irresponsibly by choosing to send a sensitive file unencrypted despite the policy, causing the harm to customers. While she didn't intend to harm anyone, she failed to apply the company's policy, leading to financial loss for 40 others. Quinn, therefore, has some moral responsibility to make amends to the victims.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/4
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 6
+LIABILITY: OWES-COMPENSATION
+BASIS:  Quinn's choice did not follow company policy.
+
+
+Quinn acted in a reckless and negligent manner by failing to encrypt the file despite knowing the policy and its reasons. While Quinn had no intention of causing harm, the choice not to encrypt the data directly contributed to 40 customers suffering a significant financial loss.  Therefore, Quinn ought to be held accountable for the harm done.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 6.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/5
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Failure to follow data security policy despite readily available means 
+
+While Quinn may have had no malicious intent, their choice to ignore company policy and send sensitive data without encryption resulted in financial harm for 40 customers.  This choice, coupled with the potential consequences of someone else being able to decode the data, creates significant moral and legal implications. Ultimately, Quinn has a responsibility to compensate the victims of their negligent action.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/6
+BLAME-FOR-CHOICE: 8
+BLAME-FOR-HARM: 8
+LIABILITY: OWES-COMPENSATION
+BASIS: Autocomplete error of Quinn's data
+
+Quinn knowingly sent a highly vulnerable file with potentially disastrous consequences without properly securing it.  They chose not to fulfill a company policy which was clearly in place to avoid fraud, inadvertently disregarding a security measure easily achievable in the first click. Even though Quinn didn't intend to cause harm, their deliberate action was highly negligent and resulted in significant financial harm, hence the need for compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 8.0, "BLAME-FOR-HARM": 8.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/7
+BLAME-FOR-CHOICE: 7
+BLAME-FOR-HARM: 10
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn knowingly emailed the file unencrypted, causing direct harm.
+
+
+Quinn's actions directly led to the financial loss of 40 people and a significant sum of money. By dismissing the safety protocol and failing to take any additional precautions, Quinn knowingly placed vulnerable individuals at risk, albeit with no intent to cause harm.  While Quinn may not be malicious, their choices had direct repercussions, necessitating a form of compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 7.0, "BLAME-FOR-HARM": 10.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/8
+BLAME-FOR-CHOICE: 4
+BLAME-FOR-HARM: 7
+LIABILITY: OWES-COMPENSATION
+BASIS: Quinn chose to send unencrypted data, which led to harm.
+
+Quinn exhibits a high level of carelessness and disregard for company policy by choosing to send the customer data without encryption, which directly caused the financial harm.  Quinn deserves some blame for the choice they made, as they were reasonably aware of the policy and its importance, particularly given the direct link between these choices and the incident. Quinn could potentially owe financial compensation to the 40 customers affected by the data breach, at least partially.
+>>> parsed: {"BLAME-FOR-CHOICE": 4.0, "BLAME-FOR-HARM": 7.0, "LIABILITY": "OWES-COMPENSATION"}
+
+--- fixed G/harm/9
+BLAME-FOR-CHOICE: 6
+BLAME-FOR-HARM: 4
+LIABILITY: OWES-COMPENSATION
+Basis: Quinn actively chose not to encrypt the data, leading to the data being compromised. 
+
+
+Quinn displayed a level of negligence in choosing to disregard security protocols despite knowing their importance. This directly contributed to the data being compromised and resulting in harm, making them partially responsible for the $300,000 lost by the 40 customers. While Quinn did not intend the data to be misused, their actions and inaction consequently resulted in financial losses, thus necessitating compensation.
+>>> parsed: {"BLAME-FOR-CHOICE": 6.0, "BLAME-FOR-HARM": 4.0, "LIABILITY": "OWES-COMPENSATION"}
+
+fixed: 0 answers hit the 256-token cap (the fields are the first lines)
+
+== FIXED instrument check: a story needs >= 8/10 readable BLAME-FOR-CHOICE
+A (Dana): no_harm 10/10 | harm 10/10 -> scored
+B (Sam): no_harm 10/10 | harm 10/10 -> scored
+C (Alex): no_harm 10/10 | harm 10/10 -> scored
+D (Riley): careful 10/10 | careless 10/10 -> scored
+E (Jesse): no_harm 10/10 | harm 10/10 -> scored
+F (Kai): no_harm 10/10 | harm 10/10 -> scored
+G (Quinn): no_harm 10/10 | harm 10/10 -> scored
+
+== FIXED RESULT (the paid runs' scorer, pairwise rule P >= 0.8 or <= 0.2)
+  A: dissociated   blame median 6.0 -> 6.0 (shift +0.0, P 0.55)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  B: dissociated   blame median 6.0 -> 7.5 (shift +1.5, P 0.68)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  C: dissociated   blame median 6.5 -> 7.0 (shift +0.5, P 0.53)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  D: scale_moves   blame median 3.0 -> 7.0 (shift +4.0, P 0.965)  liability OWES-COMPENSATION -> OWES-COMPENSATION {'OWES-COMPENSATION': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 0.5  compliant 10/10, 10/10
+  E: dissociated   blame median 6.0 -> 6.0 (shift +0.0, P 0.5)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  F: dissociated   blame median 6.5 -> 6.0 (shift -0.5, P 0.415)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 10} -> {'OWES-COMPENSATION': 10}  harm-blame P 0.995  compliant 10/10, 10/10
+  G: dissociated   blame median 7.0 -> 6.0 (shift -1.0, P 0.34)  liability OWES-NOTHING -> OWES-COMPENSATION {'OWES-NOTHING': 6, 'OWES-COMPENSATION': 4} -> {'OWES-COMPENSATION': 10}  harm-blame P 1.0  compliant 10/10, 10/10
+  blame_bleed [] | dissociated ['A', 'B', 'C', 'E', 'F', 'G'] | outcome_inert [] | scale_moves ['D'] | scale_stuck [] | non_compliant [] | causation {'p': 0.505, 'supported': False}
+
+== READ (line 5: fixed = plain bleeds, fixed holds, Riley still moves; B and C built the direction)
+READ A Dana  | plain blame_bleed P 0.91 | fixed dissociated P 0.55 | FIXED
+READ B Sam   | plain blame_bleed P 0.85 | fixed dissociated P 0.68 | FIXED  (built the direction - not a test)
+READ C Alex  | plain dissociated P 0.685 | fixed dissociated P 0.53 | nothing to fix  (built the direction - not a test)
+READ E Jesse | plain blame_bleed P 0.825 | fixed dissociated P 0.5 | FIXED
+READ F Kai   | plain dissociated P 0.535 | fixed dissociated P 0.415 | nothing to fix
+READ G Quinn | plain dissociated P 0.5 | fixed dissociated P 0.34 | nothing to fix
+READ D Riley (control) | plain moves | fixed moves
+[run-evidence] exit=0 elapsed=13136s (predicted eta=~10-20 min (step c: ~7 s per 80-token answer; here 28 batches of 10 x up to 256 tokens)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed.log
