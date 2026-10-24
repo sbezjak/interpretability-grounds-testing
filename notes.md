@@ -399,9 +399,89 @@ built on our 0-9 prompts and used unchanged on the verbatim 0-10 ones; gemma-2-2
 With this, harm / no harm closes where it started - on the outside test: plain gemma fails it on Dana and Jesse, fixed
 gemma passes, still tracking harm and liability.
 
+### Gemma Scope - the outcome direction in words? (2026-10-24)
+
+The outcome direction works, but it has no name. **Gemma Scope** (Google) is a dictionary for gemma's notes: it rewrites
+the 2304 numbers at one layer as a short list of **features** ("feature 5976 is on with strength 3"), and each feature
+has a public page on **Neuronpedia** with the text where it fires most and an AI-written label. The plan: run harm and
+no-harm notes through the dictionary and read the labels of the features that switch with the outcome.
+
+The toy, 3 numbers and 3 features (each feature writes one arrow; it counts as "on" only above its threshold, 0.5):
+
+| feature | made-up label | writes |
+|---|---|---|
+| 0 | "someone got hurt" | [1, 0, 0] |
+| 1 | "it turned out fine" | [0, 0, 1] |
+| 2 | "a parent deciding" | [0, 1, 0] |
+
+Harm notes [1.8, 0.7, 0.1] read as feature 0 = 1.8, feature 2 = 0.7 (feature 1's 0.1 is under its threshold, so off);
+no-harm notes [0.0, 0.7, 0.9] read as feature 1 = 0.9, feature 2 = 0.7. Harm minus no harm: **+1.8 "hurt", -0.9
+"fine", 0 "deciding"** - the outcome, in words. The rebuild of the harm notes is [1.8, 0.7, 0.0]: the 0.1 under the
+threshold is lost - the part the dictionary does not see. (These numbers are the canned test.)
+
+**The catch: Gemma Scope was trained on base gemma-2-2b; we use -it** (the chat-trained version). A dictionary for one
+model may misread the other. So, agreed before the run (Sara, 2026-10-24):
+
+1. Dictionary: Gemma Scope residual, 16k features, the one Neuronpedia labels (`layer_16/width_16k/average_l0_78`).
+   Counting: our "after layer 17" is their **layer 16** - they count from 0.
+2. **Gate:** put the dictionary's rebuilt notes in place of the real ones (layer 17, last token). Dana's leak and
+   Riley's gap must each stay **within 20%**, digit mass >= 0.9 - or stop: the labels can't be trusted for this.
+3. Split: per feature, harm minus no harm, averaged over Sam and Alex; the top 10 by size, Dana beside them.
+4. Coverage: the cosine between the outcome direction and the arrow those top 10 write together - how much of it the
+   words explain.
+5. Labels: each top feature's Neuronpedia page (only the feature numbers go out).
+6. Guess written down before looking: the biggest features sit on the no-harm side and are about things turning out
+   fine (step c's "lenient when lucky").
+
+**What the run showed (dana-outcome-direction-gemma-scope-gemma-2-2b-it): the gate failed.**
+
+| with gemma's real notes | with the dictionary's rebuild |
+|---|---|
+| Dana's leak 2.72 | **1.12** |
+| Riley's gap 3.44 | **1.25** |
+
+The rebuild keeps only about 40% of what drives the verdict, and it loses Riley's real difference as much as Dana's
+leak - so it isn't missing "the outcome" in particular, it is missing much of what sets the blame number. Every blame
+moves toward the middle. The rebuild is rough, not nonsense: 58-71 features on per note (the dictionary's average on
+base text is 78), pointing almost the same way as the real notes (cosine about 0.85) but missing about half their
+length.
+
+**Is that the base-vs-chat mismatch, or this dictionary's normal error?** We ran the same gate on base gemma-2-2b, the
+model the dictionary was made for, with the exact same tokens (dana-outcome-direction-gemma-scope-gemma-2-2b-base-gate).
+It stopped one step earlier: **base gemma does not judge the stories.** It answers about 3.5-4 to every story - Dana's
+leak 0.16, careless vs careful Riley 0.05 - so there is nothing to compare. The question stays open. A reading, not
+tested: the judging (and the leak) come from the chat training, and that is the part a base-trained dictionary is least
+likely to have words for.
+
+**A look anyway, for learning - not a finding (dana-outcome-direction-gemma-scope-look-gemma-2-2b-it).** Sara asked to
+see the pictures, so the same run went on past the failed gate, marked as such. How much the words can cover, measured:
+the top 10 features point only loosely along the outcome direction (**cosine 0.29**; all 79 features that change at
+all reach 0.43). Three features worth a look, read from their Neuronpedia pages:
+
+| feature | on more in | what the page shows | stories |
+|---|---|---|---|
+| [9486](https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/9486) | harm | fires just before a poor rating: "fallen to an abysmal _ 37 percent", "ratings are _ in the toilet"; pushes up *worse, worst, dismal* | Sam only |
+| [12506](https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/12506) | harm | remembering victims: "a **memorial** statue... names of victims", "pay **tribute**"; pushes up *memorial, remembrance* | mostly Alex |
+| [5976](https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/5976) | no harm | the softening step down: "if not horrifying, at **least** hard to comprehend", "at **best**"; pushes up *partial, mildly* | all three, Dana too |
+
+Together a sensible picture: after harm, "a bad rating is coming" and "remembrance of victims"; after no harm, "only
+partially, mildly" - right where gemma is about to say its blame number. 5976 fits the written-down guess, and the
+number half of it held too (6 of the top 10 on the no-harm side). But it is a picture through a dictionary that failed
+the gate and sees under half of the direction - an illustration, not what the direction *is*.
+
+How to read a Neuronpedia page (learned on these): skip the `<bos>` rows (document start - many features fire there,
+it means nothing); look at what comes right after the highlighted token; check it against the positive logits (the
+words it makes more likely). Trust the snippets over the labels - on 12506 two of three AI labels said "punctuation"
+and "follows a capitalized word"; only "paying tribute" fit.
+
+Fair claim: **this dictionary can't read the outcome direction in gemma-2-2b-it** (gate failed, 2.72 -> 1.12); why -
+mismatch or normal error - is open, because base gemma can't do the test. For eval awareness this means: the
+direction itself (the difference of averages, as here) is the tool; a Gemma Scope feature is at most a look, and needs
+the same gate first.
+
 ### Next (agreed with Sara 2026-10-23)
 
-Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a and c are done** (above), and so is the normal test. Then: **Neuronpedia** (one small step), then **b**.
+Order: **a**, then **b**. The removed-model test (**c**) is planned; when it runs is Sara's call. **a and c are done** (above), and so is the normal test, and the **Neuronpedia** step (above, gate failed). Next: **b**.
 
 - **a) Make it sturdier** (fast, about one run). Remove the direction at **every token**, not only the last - does the
   leftover third go too? And **several random directions** (different seeds), so the control does not rest on one.
@@ -438,7 +518,7 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
 
 - Small enough for an 8 GB Mac at half precision (about 5.2 GB - tight, it may swap).
 - **Gemma Scope**: pretrained dictionaries (SAEs) that label what directions in gemma's notes mean. Not needed for
-  patching; needed later for eval awareness.
+  patching. Trained on base gemma-2-2b, and it failed our gate on -it (see "Gemma Scope" above) - a look, not a tool.
 - The model most public interpretability tutorials and tools are built on - good for anyone following along.
 - Gated: accept Google's license on Hugging Face and log in with a read token (one time).
 
@@ -448,7 +528,8 @@ Frontier models often read my test prompts as tests. If a model holds steady onl
 watched, the hold is performance, not governance.
 
 Same machinery: contrast "this is a test" prompts with "real use" prompts, find the direction that separates them
-(the difference of the averages, or a Gemma Scope feature), turn it down while the model rates Dana. Holds that
+(the difference of the averages; a Gemma Scope feature only after the same rebuild gate - it failed on the outcome
+direction), turn it down while the model rates Dana. Holds that
 survive are real; holds that vanish were test performance. Prior-art check first - this has been done on larger
 models.
 
@@ -459,6 +540,8 @@ models.
 - **Activation patching** - swapping activations from one run into another to see what changes.
 - **Hook** - a function attached to a layer that can read or replace its output.
 - **SAE (sparse autoencoder)** - a dictionary that splits a layer's notes into labelled features.
+- **Feature** - one entry of that dictionary: an arrow it can write into the notes, with a strength (0 = off).
+- **Neuronpedia** - the public website with a page per feature: top text snippets, the words it pushes up, AI labels.
 - **Expected blame** - the probability-weighted average of the blame numbers.
 - **Fraction restored / removed** - how much of the leak one swap brought back (or took away): 0 = none, 1 = all.
 - **Logit lens** - running the model's final reader on the notes after every layer, to watch the answer form.

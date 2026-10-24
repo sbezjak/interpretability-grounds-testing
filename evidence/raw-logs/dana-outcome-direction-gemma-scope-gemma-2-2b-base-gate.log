@@ -1,0 +1,26 @@
+[run-evidence] 2026-10-24T07:52:10Z | .venv/bin/python -u outcome_leak.py gemma-scope-base dana-outcome-direction-gemma-scope-gemma-2-2b-base-gate
+[run-evidence] predicted eta=~1 min (-it gate run: 19 s; base loads from float32) | cost=0 (local)
+GATE ONLY on google/gemma-2-2b, same prompts and rule as the -it run. READ RULE (written before the run): base passes -> the -it mismatch is the cause; base fails too -> this dictionary's normal error at this token, not -it
+
+dictionary google/gemma-scope-2b-pt-res/layer_16/width_16k/average_l0_78/params.npz | sha256 3e1558c7f0ecb6f954f63c287bb342cca38961a8fa249d5a3d60dcd5bcb54865
+shapes: W_dec (16384, 2304) | W_enc (2304, 16384) | b_dec (2304,) | b_enc (16384,) | threshold (16384,)
+our row 17 = the output of layer 17 counted from 1 = Gemma Scope layer 16 (blocks.16.hook_resid_post, counted from 0)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:04<20:19,  4.25s/it]Loading weights: 100%|██████████| 288/288 [00:04<00:00, 67.70it/s]
+model google/gemma-2-2b revision c5ebcd40d208330abc697524c919956e692655cf | dtype torch.bfloat16 | layers 26
+
+== BASELINE. every case, both legs, nothing removed
+Sam   no_harm  318 tokens | expected blame 3.5125 | digit mass 0.9621
+Sam   harm     337 tokens | expected blame 3.7434 | digit mass 0.9708
+Alex  no_harm  301 tokens | expected blame 3.5747 | digit mass 0.9617
+Alex  harm     313 tokens | expected blame 3.7420 | digit mass 0.9523
+Dana  no_harm  343 tokens | expected blame 3.7234 | digit mass 0.9777
+Dana  harm     376 tokens | expected blame 3.8855 | digit mass 0.9791
+Riley careful  285 tokens | expected blame 3.9501 | digit mass 0.9697
+Riley careless 293 tokens | expected blame 4.0012 | digit mass 0.9691
+Sam leak = harm - no_harm = +0.2309 (information only)
+Alex leak = harm - no_harm = +0.1673 (information only)
+Dana leak = harm - no_harm = +0.1620
+Riley gap = careless - careful = +0.0511
+GATE STOP: |leak| 0.162 < 0.3; Riley gap careless - careful 0.051 < 0.3
+[run-evidence] exit=0 elapsed=11s (predicted eta=~1 min (-it gate run: 19 s; base loads from float32)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/dana-outcome-direction-gemma-scope-gemma-2-2b-base-gate.log

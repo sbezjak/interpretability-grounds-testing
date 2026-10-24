@@ -15,7 +15,7 @@ import scorer
 from outcome_leak import (
     case_gate, cosine, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, largest, left,
     liability_read, outcome_direction, phrase_prob, read_case, read_curve, read_removal, readable, remove, riley_gate,
-    shrink, softcap,
+    sae_decode, sae_encode, shrink, softcap, splice_gate, top_features,
 )
 
 
@@ -281,10 +281,42 @@ def test_shrink_and_rules():
     assert read_removal(shrinks, masses, kept, riley_masses, moves) == ([2, 3, 4, 5, 6], [3, 4, 5], [4, 5])
 
 
+def test_gemma_scope():
+    # the toy dictionary from the explanation: 3 numbers, 3 features, each writes one arrow, threshold 0.5 each
+    #   feature 0 "someone got hurt" [1, 0, 0] | feature 1 "it turned out fine" [0, 0, 1] | 2 "a parent deciding" [0, 1, 0]
+    W_dec = torch.stack([vec(1, 0, 0), vec(0, 0, 1), vec(0, 1, 0)])
+    sae = {"W_enc": W_dec.T, "b_enc": vec(0, 0, 0), "W_dec": W_dec, "b_dec": vec(0, 0, 0), "threshold": vec(.5, .5, .5)}
+    harm, no_harm = vec(1.8, 0.7, 0.1), vec(0.0, 0.7, 0.9)
+    # harm: scores [1.8, 0.1, 0.7]; 0.1 is under its threshold -> off; the others keep their whole score
+    a_harm, a_no = sae_encode(harm, sae), sae_encode(no_harm, sae)
+    assert torch.allclose(a_harm, vec(1.8, 0, 0.7)) and torch.allclose(a_no, vec(0, 0.9, 0.7))
+    # exactly at the threshold is still off (Gemma Scope: score > threshold)
+    assert torch.allclose(sae_encode(vec(0.5, 0, 0), sae), vec(0, 0, 0))
+    # harm - no harm per feature: +1.8 hurt, -0.9 fine, 0 deciding -> the outcome, in words
+    d = a_harm - a_no
+    assert torch.allclose(d, vec(1.8, -0.9, 0)) and top_features(d, 2) == [0, 1]
+    assert top_features(vec(0.1, -0.9, 0.5), 3) == [1, 2, 0]  # by size, sign kept out of the order
+    # the rebuild loses the 0.1 that stayed under the threshold - the leftover the dictionary does not see
+    assert torch.allclose(sae_decode(a_harm, sae), vec(1.8, 0.7, 0.0))
+    # coverage: the arrow the top 2 write, 1.8 x [1,0,0] - 0.9 x [0,0,1] = [1.8, 0, -0.9], vs u = the real difference
+    # [1.8, 0, -0.8]: cosine (3.24 + 0.72) / (sqrt(4.05) x sqrt(3.88)) = 0.99897
+    arrow = sum(d[i] * W_dec[i] for i in top_features(d, 2))
+    assert round(cosine(arrow, harm - no_harm), 5) == 0.99897
+    # gate: leak 2.72 -> 2.5 with rebuilt notes is 8% off, Riley 3.44 -> 3.0 is 13% off -> go
+    assert splice_gate((2.72, 3.44), (2.5, 3.0), [0.99, 0.95]) == []
+    # 2.72 -> 2.0 is 26% off -> stop; Riley 3.44 -> 4.2 is 22% off (too high counts too) -> stop; mass 0.85 -> stop
+    assert splice_gate((2.72, 3.44), (2.0, 3.44), [0.99]) == ["Dana leak with rebuilt notes +2.0000 vs real +2.7200: "
+                                                              "off by 0.265 > 0.2"]
+    assert len(splice_gate((2.72, 3.44), (2.72, 4.2), [0.99])) == 1
+    assert splice_gate((2.72, 3.44), (2.72, 3.44), [0.99, 0.85]) == ["digit mass 0.850 < 0.9 with rebuilt notes"]
+    # exactly 20% off still passes (<=)
+    assert splice_gate((2.5, 4.0), (2.0, 4.8), [0.9]) == []
+
+
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
-             test_liability_read, test_new_cases, test_normal_test, test_shrink_and_rules]
+             test_liability_read, test_new_cases, test_normal_test, test_shrink_and_rules, test_gemma_scope]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

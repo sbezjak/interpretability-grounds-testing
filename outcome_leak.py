@@ -12,6 +12,9 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
     .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
+    .venv/bin/python outcome_leak.py gemma-scope <name>   the outcome direction in words: Gemma Scope + Neuronpedia
+    .venv/bin/python outcome_leak.py gemma-scope-base <name>   the same gate on base gemma-2-2b (the dictionary's own)
+    .venv/bin/python outcome_leak.py gemma-scope-look <name>   past the failed gate: features + labels, for learning only
 """
 
 import contextlib
@@ -212,11 +215,44 @@ def fixed_case(plain, fixed, riley_moves):
     return plain == "blame_bleed" and fixed not in ("blame_bleed", "non_compliant") and riley_moves
 
 
+# the Gemma Scope step: put the outcome direction into words (agreed with Sara 2026-10-24, before the run)
+SPLICE_MAX = 0.2  # gate: with the dictionary's rebuilt notes, Dana's leak and Riley's gap each stay within 20%
+TOP_K = 10  # the features shown and looked up on Neuronpedia
+
+
+def sae_encode(x, sae):
+    """The dictionary's read of notes x: one strength per feature, 0 = off. Gemma Scope's JumpReLU: a feature is on
+    only if its score passes its own threshold, and then it keeps the whole score."""
+    pre = x @ sae["W_enc"] + sae["b_enc"]
+    return pre * (pre > sae["threshold"])
+
+
+def sae_decode(acts, sae):
+    """The notes rebuilt from the features: each on feature writes its arrow, times its strength."""
+    return acts @ sae["W_dec"] + sae["b_dec"]
+
+
+def top_features(d, k=TOP_K):
+    """The k features whose difference is biggest by size, biggest first - both signs."""
+    return sorted(range(len(d)), key=lambda i: -abs(float(d[i])))[:k]
+
+
+def splice_gate(real, rebuilt, masses):
+    """Line 2. real / rebuilt = (Dana leak, Riley gap) with the real notes / the rebuilt ones at the row; masses =
+    digit mass of every rebuilt run. Returns the stop reasons; empty = go on."""
+    stop = [f"{what} with rebuilt notes {b:+.4f} vs real {a:+.4f}: off by {abs(b / a - 1):.3f} > {SPLICE_MAX}"
+            for what, a, b in zip(("Dana leak", "Riley gap"), real, rebuilt) if abs(b / a - 1) > SPLICE_MAX]
+    if min(masses) < MASS_MIN:
+        stop.append(f"digit mass {min(masses):.3f} < {MASS_MIN} with rebuilt notes")
+    return stop
+
+
 # ------------------------------------------------------------------------------------------------ the model
 
 import torch  # noqa: E402 - below the logic on purpose: the canned test reads the top half first
 
 MODEL = "google/gemma-2-2b-it"
+BASE = "google/gemma-2-2b"  # what Gemma Scope was trained on; same vocabulary, no chat template - prompts come from -it's
 DEVICE = "mps"
 FIXTURE = pathlib.Path(__file__).parent / "fixtures" / "moral-luck-02.json"  # verbatim copy, theory-grounds-testing
 FIXTURE_06 = FIXTURE.parent / "moral-luck-06-sep.json"  # verbatim copy, judge-outcome-bias-probe d4b5579: cases E-G
@@ -236,14 +272,14 @@ def prompts(key="A", fixture=FIXTURE):
     return {leg: "\n\n".join([text, question, contract.format(name=case["name"])]) for leg, text in case["legs"].items()}
 
 
-def load():
+def load(model_id=MODEL):
     from transformers import AutoModelForCausalLM, AutoTokenizer
 
-    tok = AutoTokenizer.from_pretrained(MODEL)
+    tok = AutoTokenizer.from_pretrained(MODEL)  # -it's tokenizer for both: base has the same vocabulary, no template
     # eager attention: gemma 2 caps its attention scores, and only the eager path does that.
     # device_map loads straight onto the GPU - loading to memory first and then copying needs ~2x on 8 GB.
     model = AutoModelForCausalLM.from_pretrained(
-        MODEL, dtype=torch.bfloat16, attn_implementation="eager", device_map=DEVICE
+        model_id, dtype=torch.bfloat16, attn_implementation="eager", device_map=DEVICE
     )
     return tok, model.eval()
 
@@ -550,13 +586,13 @@ def lens_from_log(name):
 CASES = {"Sam": "B", "Alex": "C", "Dana": "A", "Riley": "D"}  # Sam + Alex build the direction, Dana is held out
 
 
-def removal_setup():
+def removal_setup(model_id=MODEL):
     """Load gemma, run every case with nothing removed, apply the gate. Returns the pieces, or None if the gate stops."""
     import transformers
 
     print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
-    tok, model = load()
-    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype} | "
+    tok, model = load(model_id)
+    print(f"model {model_id} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype} | "
           f"layers {len(model.model.layers)}")
     dids = digit_ids(tok)
 
@@ -1138,11 +1174,134 @@ def normal_test(name):
     return ok
 
 
+SAE_REPO = "google/gemma-scope-2b-pt-res"  # trained on BASE gemma-2-2b - hence the gate
+SAE_FILE = "layer_16/width_16k/average_l0_78/params.npz"  # the one Neuronpedia labels as 16-gemmascope-res-16k
+NEURONPEDIA = "gemma-2-2b/16-gemmascope-res-16k"
+GUESS = ("the biggest features sit on the no-harm side and are about things turning out fine "
+         "(step c's leniency reading) - written down 2026-10-24, before the run")
+
+
+def neuronpedia(i):
+    """Feature i's public Neuronpedia record (labels, top tokens, top snippets). Only the number i goes out."""
+    import urllib.request
+
+    req = urllib.request.Request(f"https://www.neuronpedia.org/api/feature/{NEURONPEDIA}/{i}",
+                                 headers={"User-Agent": "interpretability-grounds-testing"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        return json.loads(r.read())
+
+
+def gemma_scope(name, model_id=MODEL, look=False):
+    """The Gemma Scope step: split the outcome direction (row FIX_ROW) into dictionary features and read their
+    Neuronpedia labels. Gate first: does gemma-2-2b-it still leak, and Riley still differ, on the rebuilt notes?
+    model_id = BASE runs the gate only, on the model the dictionary was trained on (option B, agreed 2026-10-24).
+    look = True goes on past a failed gate: the features and labels viewed for learning, not a finding (Sara, option C)."""
+    import hashlib
+
+    import numpy as np
+    from huggingface_hub import hf_hub_download
+
+    if look:
+        print("LOOK MODE: the gate failed (dana-outcome-direction-gemma-scope-gemma-2-2b-it) - the features and labels "
+              "below are viewed for learning, NOT a finding")
+    if model_id == MODEL:
+        print(f"GUESS (line 6): {GUESS}")
+    else:
+        print(f"GATE ONLY on {model_id}, same prompts and rule as the -it run. READ RULE (written before the run): "
+              "base passes -> the -it mismatch is the cause; base fails too -> this dictionary's normal error at this "
+              "token, not -it")
+    path = hf_hub_download(SAE_REPO, SAE_FILE)
+    print(f"\ndictionary {SAE_REPO}/{SAE_FILE} | sha256 {hashlib.sha256(open(path, 'rb').read()).hexdigest()}")
+    sae = {k: torch.from_numpy(v).float() for k, v in np.load(path).items()}
+    print("shapes: " + " | ".join(f"{k} {tuple(v.shape)}" for k, v in sorted(sae.items())))
+    print(f"our row {FIX_ROW} = the output of layer {FIX_ROW} counted from 1 = Gemma Scope layer {FIX_ROW - 1} "
+          "(blocks.16.hook_resid_post, counted from 0)")
+    setup = removal_setup(model_id)
+    if setup is None:
+        return True
+    model, blame, ids, base, leak, gap, diff = setup
+    L = FIX_ROW
+    notes = {k: v[0][L] for k, v in base.items()}
+    acts = {k: sae_encode(x, sae) for k, x in notes.items()}
+    rebuilt = {k: sae_decode(a, sae) for k, a in acts.items()}
+
+    print(f"\n== GATE (line 2): the rebuilt notes in place of the real ones, row {L}, last token")
+    print("who   leg      | features on | rebuild error |x - rebuilt|/|x| | cos(x, rebuilt) | blame real -> rebuilt "
+          "| mass")
+    after = {}
+    for (who, leg), x in notes.items():
+        b, m = blame(run(model, ids[who, leg], (L, rebuilt[who, leg]))[1])
+        after[who, leg] = (b, m)
+        err = ((x - rebuilt[who, leg]).norm() / x.norm()).item()
+        print(f"{who:5s} {leg:8s} | {int((acts[who, leg] > 0).sum()):11d} | {err:30.3f} | "
+              f"{cosine(x, rebuilt[who, leg]):+15.3f} | {blame(base[who, leg][1])[0]:.4f} -> {b:.4f} | {m:.3f}")
+    real = (leak, gap)
+    spliced = (after["Dana", "harm"][0] - after["Dana", "no_harm"][0],
+               after["Riley", "careless"][0] - after["Riley", "careful"][0])
+    print(f"Dana leak real {leak:+.4f} -> rebuilt {spliced[0]:+.4f} | Riley gap real {gap:+.4f} -> rebuilt "
+          f"{spliced[1]:+.4f}")
+    stop = splice_gate(real, spliced, [m for (who, _), (_, m) in after.items() if who in ("Dana", "Riley")])
+    if stop:
+        print("GATE STOP: " + "; ".join(stop) + " - base-model labels do not fit -it here")
+        if not look:
+            return True
+        print("LOOK MODE: going on past the failed gate - untrusted labels from here")
+    print(f"GATE GO: the rebuilt notes keep Dana's leak and Riley's gap within {SPLICE_MAX:.0%}, number answers")
+    if model_id != MODEL:
+        return True
+
+    print(f"\n== SPLIT (line 3): per feature, harm - no_harm strength, averaged over Sam and Alex; top {TOP_K} by size")
+    dd = {who: acts[who, "harm"] - acts[who, "no_harm"] for who in ("Sam", "Alex", "Dana")}
+    d = (dd["Sam"] + dd["Alex"]) / 2
+    u = outcome_direction([diff("Sam", "no_harm", "harm", L), diff("Alex", "no_harm", "harm", L)])
+    top = top_features(d)
+    print(f"features that differ at all (Sam + Alex average): {int((d != 0).sum())} of {len(d)}")
+    print("cov = coverage (line 4): cos(u, the arrow the features so far write together)")
+    print("rank | feature |  diff  |  Sam   |  Alex  |  Dana  | on in   | cov")
+    arrow = torch.zeros_like(u)
+    for r, i in enumerate(top, 1):
+        arrow = arrow + d[i] * sae["W_dec"][i]
+        print(f"{r:4d} | {i:7d} | {d[i]:+.2f} | {dd['Sam'][i]:+.2f} | {dd['Alex'][i]:+.2f} | {dd['Dana'][i]:+.2f} | "
+              f"{'harm' if d[i] > 0 else 'no harm':7s} | {cosine(arrow, u):+.3f}")
+    print(f"\nCOVERAGE (line 4): top {TOP_K} features cover cos {cosine(arrow, u):+.3f} of u | all features (the "
+          f"rebuilt difference) cos {cosine(d @ sae['W_dec'], u):+.3f} | Dana's own feature difference vs the "
+          f"Sam + Alex one cos {cosine(dd['Dana'], d):+.3f}")
+    sides = sum(d[i] > 0 for i in top)
+    print(f"SIDES (line 6, the number half of the guess): top {TOP_K} = {int(sides)} on in harm, "
+          f"{TOP_K - int(sides)} on in no harm")
+
+    print(f"\n== LABELS (line 5): Neuronpedia, {NEURONPEDIA} (an AI's guess from base-model text - hints, not proof)")
+    print("ours = the tokens the feature's arrow pushes up most through gemma-2-2b-it's reader - an index check "
+          "against Neuronpedia's 'up', which uses the base model")
+    tok = __import__("transformers").AutoTokenizer.from_pretrained(MODEL)
+    for r, i in enumerate(top, 1):
+        print(f"\n#{r} feature {i} ({d[i]:+.2f}, on in {'harm' if d[i] > 0 else 'no harm'}) "
+              f"https://www.neuronpedia.org/{NEURONPEDIA}/{i}")
+        with torch.no_grad():
+            up = (model.lm_head.weight @ sae["W_dec"][i].to(DEVICE, model.dtype)).float().topk(8).indices
+        print(f"   ours up: {tok.convert_ids_to_tokens(up.tolist())}")
+        try:
+            f = neuronpedia(i)
+        except Exception as e:  # the numbers above stand; the link still works on the site
+            print(f"   label fetch failed: {e!r}")
+            continue
+        for e in f.get("explanations") or []:
+            print(f"   label: {e['description'].strip()!r} ({e.get('explanationModelName')})")
+        print(f"   neuronpedia up: {f.get('pos_str', [])[:8]}")
+        for a in sorted(f.get("activations") or [], key=lambda a: -a["maxValue"])[:3]:
+            k, t = a["maxValueTokenIndex"], a["tokens"]
+            print(f"   snippet ({a['maxValue']:.1f}): {''.join(t[max(0, k - 15):k])}[[{t[k]}]]{''.join(t[k + 1:k + 6])}"
+                  .replace("\n", "\\n"))
+    return True
+
+
 if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
     no_name = {"smoke": smoke, "removed-smoke": removed_smoke}
     named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
              "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases,
-             "normal-test": normal_test}
+             "normal-test": normal_test, "gemma-scope": gemma_scope,
+             "gemma-scope-base": lambda name: gemma_scope(name, BASE),
+             "gemma-scope-look": lambda name: gemma_scope(name, look=True)}
     sys.exit(0 if (no_name[cmd]() if cmd in no_name else named[cmd](sys.argv[2])) else 1)

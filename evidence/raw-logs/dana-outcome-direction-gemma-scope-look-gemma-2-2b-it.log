@@ -1,0 +1,163 @@
+[run-evidence] 2026-10-24T07:55:16Z | .venv/bin/python -u outcome_leak.py gemma-scope-look dana-outcome-direction-gemma-scope-look-gemma-2-2b-it
+[run-evidence] predicted eta=~30 s (-it gate run: 19 s; + 10 Neuronpedia reads) | cost=0 (local; Neuronpedia public read)
+LOOK MODE: the gate failed (dana-outcome-direction-gemma-scope-gemma-2-2b-it) - the features and labels below are viewed for learning, NOT a finding
+GUESS (line 6): the biggest features sit on the no-harm side and are about things turning out fine (step c's leniency reading) - written down 2026-10-24, before the run
+
+dictionary google/gemma-scope-2b-pt-res/layer_16/width_16k/average_l0_78/params.npz | sha256 3e1558c7f0ecb6f954f63c287bb342cca38961a8fa249d5a3d60dcd5bcb54865
+shapes: W_dec (16384, 2304) | W_enc (2304, 16384) | b_dec (2304,) | b_enc (16384,) | threshold (16384,)
+our row 17 = the output of layer 17 counted from 1 = Gemma Scope layer 16 (blocks.16.hook_resid_post, counted from 0)
+torch 2.12.1 | transformers 5.12.1 | mps True
+Loading weights:   0%|          | 0/288 [00:00<?, ?it/s]Loading weights:   0%|          | 1/288 [00:00<01:17,  3.72it/s]Loading weights:   9%|▉         | 27/288 [00:00<00:02, 91.16it/s]Loading weights:  20%|██        | 58/288 [00:00<00:01, 157.45it/s]Loading weights:  28%|██▊       | 80/288 [00:00<00:01, 168.69it/s]Loading weights:  36%|███▌      | 103/288 [00:00<00:00, 186.82it/s]Loading weights:  43%|████▎     | 125/288 [00:00<00:00, 190.53it/s]Loading weights:  51%|█████     | 146/288 [00:00<00:00, 191.88it/s]Loading weights:  58%|█████▊    | 167/288 [00:01<00:00, 185.13it/s]Loading weights:  65%|██████▍   | 187/288 [00:01<00:00, 183.48it/s]Loading weights:  72%|███████▏  | 206/288 [00:01<00:00, 184.63it/s]Loading weights:  78%|███████▊  | 225/288 [00:01<00:00, 177.46it/s]Loading weights:  85%|████████▍ | 244/288 [00:01<00:00, 106.80it/s]Loading weights:  91%|█████████▏| 263/288 [00:01<00:00, 121.86it/s]Loading weights:  97%|█████████▋| 279/288 [00:01<00:00, 126.11it/s]Loading weights: 100%|██████████| 288/288 [00:01<00:00, 145.63it/s]
+model google/gemma-2-2b-it revision 299a8560bedf22ed1c72a8a11e7dce4a7f9f51f8 | dtype torch.bfloat16 | layers 26
+
+== BASELINE. every case, both legs, nothing removed
+Sam   no_harm  318 tokens | expected blame 6.0206 | digit mass 0.9999
+Sam   harm     337 tokens | expected blame 7.1192 | digit mass 1.0000
+Alex  no_harm  301 tokens | expected blame 5.4585 | digit mass 0.9999
+Alex  harm     313 tokens | expected blame 6.7066 | digit mass 0.9999
+Dana  no_harm  343 tokens | expected blame 3.5629 | digit mass 0.9999
+Dana  harm     376 tokens | expected blame 6.2839 | digit mass 0.9999
+Riley careful  285 tokens | expected blame 3.0598 | digit mass 0.9999
+Riley careless 293 tokens | expected blame 6.4988 | digit mass 0.9999
+Sam leak = harm - no_harm = +1.0986 (information only)
+Alex leak = harm - no_harm = +1.2482 (information only)
+Dana leak = harm - no_harm = +2.7211
+Riley gap = careless - careful = +3.4390
+GATE GO: Dana leaks with number answers, Riley has a real gap
+
+== GATE (line 2): the rebuilt notes in place of the real ones, row 17, last token
+who   leg      | features on | rebuild error |x - rebuilt|/|x| | cos(x, rebuilt) | blame real -> rebuilt | mass
+Sam   no_harm  |          66 |                          0.521 |          +0.855 | 6.0206 -> 4.7146 | 1.000
+Sam   harm     |          64 |                          0.535 |          +0.847 | 7.1192 -> 6.0199 | 1.000
+Alex  no_harm  |          66 |                          0.522 |          +0.854 | 5.4585 -> 4.7941 | 1.000
+Alex  harm     |          65 |                          0.531 |          +0.849 | 6.7066 -> 5.4548 | 1.000
+Dana  no_harm  |          61 |                          0.518 |          +0.857 | 3.5629 -> 4.0503 | 1.000
+Dana  harm     |          58 |                          0.530 |          +0.850 | 6.2839 -> 5.1709 | 1.000
+Riley careful  |          71 |                          0.510 |          +0.861 | 3.0598 -> 3.9325 | 1.000
+Riley careless |          64 |                          0.523 |          +0.853 | 6.4988 -> 5.1865 | 1.000
+Dana leak real +2.7211 -> rebuilt +1.1206 | Riley gap real +3.4390 -> rebuilt +1.2540
+GATE STOP: Dana leak with rebuilt notes +1.1206 vs real +2.7211: off by 0.588 > 0.2; Riley gap with rebuilt notes +1.2540 vs real +3.4390: off by 0.635 > 0.2 - base-model labels do not fit -it here
+LOOK MODE: going on past the failed gate - untrusted labels from here
+GATE GO: the rebuilt notes keep Dana's leak and Riley's gap within 20%, number answers
+
+== SPLIT (line 3): per feature, harm - no_harm strength, averaged over Sam and Alex; top 10 by size
+features that differ at all (Sam + Alex average): 79 of 16384
+cov = coverage (line 4): cos(u, the arrow the features so far write together)
+rank | feature |  diff  |  Sam   |  Alex  |  Dana  | on in   | cov
+   1 |   12379 | -5.28 | -5.57 | -4.98 | -5.56 | no harm | +0.055
+   2 |    5891 | -5.08 | -4.93 | -5.24 | -4.96 | no harm | +0.096
+   3 |    5976 | -4.27 | -5.84 | -2.69 | -2.66 | no harm | +0.166
+   4 |    9486 | +3.84 | +7.67 | +0.00 | +0.00 | harm    | +0.231
+   5 |    4415 | -3.64 | -0.94 | -6.35 | -0.30 | no harm | +0.244
+   6 |   12506 | +3.63 | +1.29 | +5.97 | +0.98 | harm    | +0.254
+   7 |   11206 | -3.56 | -5.79 | -1.33 | -5.75 | no harm | +0.263
+   8 |   15137 | +3.54 | +1.09 | +5.99 | +0.00 | harm    | +0.279
+   9 |    2244 | -3.25 | -5.45 | -1.05 | -0.93 | no harm | +0.284
+  10 |   16088 | +3.14 | +0.61 | +5.66 | +0.00 | harm    | +0.292
+
+COVERAGE (line 4): top 10 features cover cos +0.292 of u | all features (the rebuilt difference) cos +0.433 | Dana's own feature difference vs the Sam + Alex one cos +0.334
+SIDES (line 6, the number half of the guess): top 10 = 4 on in harm, 6 on in no harm
+
+== LABELS (line 5): Neuronpedia, gemma-2-2b/16-gemmascope-res-16k (an AI's guess from base-model text - hints, not proof)
+ours = the tokens the feature's arrow pushes up most through gemma-2-2b-it's reader - an index check against Neuronpedia's 'up', which uses the base model
+
+#1 feature 12379 (-5.28, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/12379
+   ours up: ['▁متعلقه', 'سطس', '▁Италијани', '▁سكانية', '▁noDo', 'aquin', ';->', 'AddTagHelper']
+   label: 'structured data and key-value pairs often used in programming or data management contexts' (gpt-4o-mini)
+   label: 'Code snippets/code-related text' (gemini-2.0-flash)
+   label: 'path or foreign language prefixes' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁متعلقه', '▁Италијани', '▁سكانية', '▁noDo', 'AddTagHelper', 'سطس', 'aquin', 'WithIOException']
+   snippet (42.5): ▁▁▁▁▁▁▁▁$status▁=▁false;\n▁▁▁▁▁▁▁▁if▁($stateNode▁=▁$this[[->_]]getState($state))▁{
+   snippet (42.5): ▁▁▁▁▁▁▁▁$status▁=▁false;\n▁▁▁▁▁▁▁▁if▁($stateNode▁=▁$this[[->_]]getState($state))▁{
+   snippet (40.4): ID];\n▁▁▁▁NSString▁*mimeType▁=▁[aDecoder▁decodeObjectForKey:[[k]]MIMEType];\n
+
+#2 feature 5891 (-5.08, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/5891
+   ours up: ['▁tendency', '▁tendencies', '▁tenden', '▁habits', '▁habit', '▁biases', '▁tendance', '▁bias']
+   label: 'references to stereotypes and their impact on communities' (gpt-4o-mini)
+   label: 'Followed by certain prepositions or articles' (gemini-2.0-flash)
+   label: 'biases and habits' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁tendency', '▁tendencies', '▁habits', '▁tenden', '▁habit', '▁biases', '▁bias', '▁tendance']
+   snippet (44.4): ,▁and▁for▁the▁problems▁and▁doubts▁and▁challenges▁we▁feel,▁and▁for▁the[[▁tendencies]]▁we▁sometimes▁have▁to▁feel
+   snippet (44.4): ,▁and▁for▁the▁problems▁and▁doubts▁and▁challenges▁we▁feel,▁and▁for▁the[[▁tendencies]]▁we▁sometimes▁have▁to▁feel
+   snippet (44.4): ,▁and▁for▁the▁problems▁and▁doubts▁and▁challenges▁we▁feel,▁and▁for▁the[[▁tendencies]]▁we▁sometimes▁have▁to▁feel
+
+#3 feature 5976 (-4.27, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/5976
+   ours up: ['▁partial', '▁semi', '▁partially', "?')", '▁partielle', 'semi', '▁mildly', 'Partial']
+   label: 'terms associated with conditionality and comparisons in statements' (gpt-4o-mini)
+   label: '"At least" or similar comparative phrases' (gemini-2.0-flash)
+   label: 'at least or best' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁partial', '▁semi', '▁partially', '▁partielle', 'semi', 'Partial', '▁Partial', '▁mildly']
+   snippet (67.9): ▁some▁of▁the▁aspects▁of▁Internet▁life▁that▁probably▁seemed,▁if▁not▁downright▁horrifying[[,]]▁at▁least▁hard▁to▁comprehend
+   snippet (67.9): ▁some▁of▁the▁aspects▁of▁Internet▁life▁that▁probably▁seemed,▁if▁not▁downright▁horrifying[[,]]▁at▁least▁hard▁to▁comprehend
+   snippet (67.9): ▁some▁of▁the▁aspects▁of▁Internet▁life▁that▁probably▁seemed,▁if▁not▁downright▁horrifying[[,]]▁at▁least▁hard▁to▁comprehend
+
+#4 feature 9486 (+3.84, on in harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/9486
+   ours up: ['▁worse', '▁Worse', 'Worse', '▁worst', 'Worst', '▁peggio', 'worst', '▁dismal']
+   label: 'a significant decline in approval ratings' (gpt-4o-mini)
+   label: 'Numbers followed by calculations' (gemini-2.0-flash)
+   label: 'least intelligent or worst outcome' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁worse', '▁Worse', '▁worst', 'Worse', 'Worst', 'worst', '▁horrible', '▁Worst']
+   snippet (36.6): .▁The▁Huffington▁Post▁reports▁that▁his▁job▁approval▁has▁fallen▁to▁an▁abysmal[[▁]]37▁percent,▁“
+   snippet (36.6): .▁The▁Huffington▁Post▁reports▁that▁his▁job▁approval▁has▁fallen▁to▁an▁abysmal[[▁]]37▁percent,▁“
+   snippet (36.6): .▁The▁Huffington▁Post▁reports▁that▁his▁job▁approval▁has▁fallen▁to▁an▁abysmal[[▁]]37▁percent,▁“
+
+#5 feature 4415 (-3.64, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/4415
+   ours up: ['NOPQRST', '▁<=",', 'twimg', '")));\r', 'usermodel', 'ванович', 'cestry', '▁myſelf']
+   label: 'technical terms related to electronics and engineering concepts' (gpt-4o-mini)
+   label: 'Followed by relative clauses/prepositions that describe the activating token' (gemini-2.0-flash)
+   label: 'clock period' (gemini-2.5-flash-lite)
+   neuronpedia up: ['NOPQRST', '▁<=",', 'twimg', '")));\r', '▁͡°)', 'ванович', 'usermodel', 'cestry']
+   snippet (74.9): ▁plurality▁of▁stacked▁planar▁sections▁each▁of▁which▁comprises▁at▁least▁two▁concentric▁spiral▁conducting[[▁members]]▁which▁are▁electrically▁insulated▁from
+   snippet (74.9): ▁plurality▁of▁stacked▁planar▁sections▁each▁of▁which▁comprises▁at▁least▁two▁concentric▁spiral▁conducting[[▁members]]▁which▁are▁electrically▁insulated▁from
+   snippet (74.9): ▁plurality▁of▁stacked▁planar▁sections▁each▁of▁which▁comprises▁at▁least▁two▁concentric▁spiral▁conducting[[▁members]]▁which▁are▁electrically▁insulated▁from
+
+#6 feature 12506 (+3.63, on in harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/12506
+   ours up: ['▁memorial', '▁commemorating', '▁remembrance', '▁commemoration', '▁Remembrance', '▁memorials', '▁commemor', '▁commemorate']
+   label: 'punctuation marks, specifically parentheses and periods' (gpt-4o-mini)
+   label: 'Follows a capitalized word' (gemini-2.0-flash)
+   label: 'paying tribute' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁memorial', '▁commemoration', '▁remembrance', '▁commemorating', '▁Remembrance', '▁memorials', '▁commemor', '▁commemorate']
+   snippet (55.7): 0▁Hungarian▁Jews▁died▁during▁WWII,▁most▁in▁concentration▁camps.▁They▁have▁a[[▁memorial]]▁statue▁out▁the▁back▁of
+   snippet (51.7): ▁presentation.[[<bos>]]Gas▁chromatographic▁evaluation▁of▁tra
+   snippet (47.7): ▁preseason▁home▁game.[[<bos>]]Q:\n\nqueue▁a
+
+#7 feature 11206 (-3.56, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/11206
+   ours up: ['<bos>', '▁بيها', '▁otomatig', 'catchError', 'WEBPACK', 'ViewFeatures', 'Autoritní', 'انجليز']
+   label: 'variable declarations and type definitions in programming code' (gpt-4o-mini)
+   label: 'Code, variable, or parameter names' (gemini-2.0-flash)
+   label: 'code snippets and technical terms' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁بيها', '▁otomatig', 'WEBPACK', 'ViewFeatures', 'catchError', '▁grecque', '▁InputDecoration', 'ethane']
+   snippet (51.0): ▁int▁indent;\n\n▁▁▁▁//Set▁variables\n▁▁▁▁public▁void▁setLength([[double]]▁len){\n▁▁▁▁▁▁▁▁if
+   snippet (50.9): ▁with▁0,0,0▁values\n▁▁▁▁Vertice3f([[float]]▁_x,▁float▁_
+   snippet (50.7): ▁createNewSpriteWithID(int▁ID,▁int▁Mass)\n{\n▁▁▁▁[[Sprite]]▁newSprite;\n▁▁▁▁
+
+#8 feature 15137 (+3.54, on in harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/15137
+   ours up: ['WaitGroup', 'GEBURTSDATUM', 'GenerationType', 'HomeAsUpEnabled', '▁ſhe', 'PathParam', 'bootstrapcdn', '▁deſt']
+   label: 'mathematical notation and operations' (gpt-4o-mini)
+   label: 'Code snippets or XML-like structures' (gemini-2.0-flash)
+   label: 'technical programming terms' (gemini-2.5-flash-lite)
+   neuronpedia up: ['PathParam', 'WaitGroup', '例句', 'ObjectId', 'PopMatrix', 'GEBURTSDATUM', 'GenerationType', 'postIndex']
+   snippet (47.2): ▁dusk▁and▁dawn,▁when▁mosquitoes▁that▁carry▁West▁Nile▁virus▁are▁most▁active.[[<bos>]]Apple▁Releases▁macOS▁Mojave▁
+   snippet (45.6): ▁blog▁is▁overseen▁by▁the▁Board▁of▁Directors▁and▁Chain▁Link▁editor▁Kim▁Guzman.[[<bos>]]<?xml▁version="1
+   snippet (44.8): graphics.fillPath();\n▁▁▁▁graphics.strokePath();\n}\n[[<bos>]]My▁Hero▁Academia▁Season▁
+
+#9 feature 2244 (-3.25, on in no harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/2244
+   ours up: ['▁good', '▁conditional', '▁okay', '▁neither', '▁normal', '\x04', '▁also', 'complexContent']
+   label: 'boolean questions regarding whether numbers are factors or multiples of each other' (gpt-4o-mini)
+   label: 'True/False questions about divisibility' (gemini-2.0-flash)
+   label: 'divisibility questions and answers' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁Cæsar', '\x04', 'PreferredItem', 'complexContent', '▁kasarigan', 'AsUp', 'tvguidetime', ':✨']
+   snippet (41.3): Is▁117725▁a▁multiple▁of▁25?[[\n]]True\nDoes▁8
+   snippet (40.8): Is▁218029▁a▁multiple▁of▁13?[[\n]]False\nIs▁6
+   snippet (40.8): Is▁218029▁a▁multiple▁of▁13?[[\n]]False\nIs▁6
+
+#10 feature 16088 (+3.14, on in harm) https://www.neuronpedia.org/gemma-2-2b/16-gemmascope-res-16k/16088
+   ours up: ['▁level', '▁Level', '▁LEVEL', 'Level', 'level', '▁Stufe', '▁nível', '▁grade']
+   label: 'classifications and rankings related to medical conditions or roles' (gpt-4o-mini)
+   label: 'Classifications or levels, often with Roman numerals' (gemini-2.0-flash)
+   label: 'class and stage designations' (gemini-2.5-flash-lite)
+   neuronpedia up: ['▁level', '▁Level', '▁LEVEL', 'Level', 'level', '▁Stufe', '▁grade', '▁nível']
+   snippet (34.7): ▁to▁the▁utilization▁of▁QUAD.▁The▁greater▁proportion▁of▁patients▁in▁NYHA[[▁class]]▁I▁and▁II▁and▁in
+   snippet (34.7): ▁to▁the▁utilization▁of▁QUAD.▁The▁greater▁proportion▁of▁patients▁in▁NYHA[[▁class]]▁I▁and▁II▁and▁in
+   snippet (34.7): ▁to▁the▁utilization▁of▁QUAD.▁The▁greater▁proportion▁of▁patients▁in▁NYHA[[▁class]]▁I▁and▁II▁and▁in
+[run-evidence] exit=0 elapsed=19s (predicted eta=~30 s (-it gate run: 19 s; + 10 Neuronpedia reads)) log=<M5>/interpretability-grounds-testing/evidence/raw-logs/dana-outcome-direction-gemma-scope-look-gemma-2-2b-it.log
