@@ -496,6 +496,20 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   should still move with the outcome** - the fixture says those may legitimately depend on it. If they go flat too,
   we made gemma blind to outcomes, not removed a bias. Those two come later in gemma's answer, so the hook has to act
   at every token gemma writes (it reuses a's every-token removal).
+- **d) The other-direction control** (idea, 2026-10-24, not agreed or built). From "Inside the Unfair Judge" (arXiv
+  2607.11871), where it is called a bias-type swap - named differently here because "swap" already means patching:
+  besides random directions, they steer with **another bias's** direction - it moves the score more than random but
+  less than the right one. Our 10 random directions show "not any push takes the leak out". This asks the harder
+  thing: "not any *meaningful* push". The plain version is a 2 x 2 - remove each direction, read both cases:
+
+  | removed | Dana's leak | Riley's gap |
+  |---|---|---|
+  | outcome direction (Sam + Alex) | goes (step a: 70% out) | stays (92%) |
+  | Riley direction (careless minus careful) | should stay | should go |
+
+  If both rows come out that way, the outcome direction holds the outcome and not "blame in general". If the Riley
+  direction also takes Dana's leak out, the two share one blame axis. Check first how alike they are (their cosine).
+  The eval-awareness arrow (step 2 below) is a second other direction to try. Lines written down before any run.
 
 ## Reading the result - same rule as my other repos
 
