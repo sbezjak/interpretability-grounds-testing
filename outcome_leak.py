@@ -1,6 +1,6 @@
 """Dana outcome leak in gemma-2-2b-it: measure it, then find where the outcome reaches the answer.
 
-Plain explanation: notes.md. Agreed plan and stop rules: next-session-prompt.md.
+Plain explanation, the rules agreed before each run, and the results: notes.md.
 Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bottom half: the model.
 
     .venv/bin/python outcome_leak.py smoke              step 0 - look at the machinery, three honesty checks
