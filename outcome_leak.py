@@ -12,6 +12,7 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
     .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
+    .venv/bin/python outcome_leak.py intervals [source log]   95% intervals on that test's P, from its log, no model
     .venv/bin/python outcome_leak.py gemma-scope <name>   the outcome direction in words: Gemma Scope + Neuronpedia
     .venv/bin/python outcome_leak.py gemma-scope-base <name>   the same gate on base gemma-2-2b (the dictionary's own)
     .venv/bin/python outcome_leak.py gemma-scope-look <name>   past the failed gate: features + labels, for learning only
@@ -222,6 +223,32 @@ def readable(answers, field):
 def fixed_case(plain, fixed, riley_moves):
     """Line 5: a case is fixed if plain gemma bleeds, fixed gemma does not (and answered), and Riley still moves."""
     return plain == "blame_bleed" and fixed not in ("blame_bleed", "non_compliant") and riley_moves
+
+
+# 95% intervals on the normal test's P (agreed with Sara 2026-10-25, before computing any interval)
+BOOT_N, BOOT_SEED = 10_000, 0  # redraws, fixed seed
+BLEED = 0.8  # the fixture's pairwise line: P >= 0.8 or <= 0.2 = the outcome leaks
+
+
+def bootstrap_p(lo, hi, n=BOOT_N, seed=BOOT_SEED):
+    """Percentile bootstrap for scorer.pairwise_p: redraw each side with replacement (same size), n times, and
+    return the middle 95% of the P values as (low, high)."""
+    import random
+
+    import scorer
+
+    rng = random.Random(seed)
+    ps = sorted(scorer.pairwise_p(rng.choices(lo, k=len(lo)), rng.choices(hi, k=len(hi))) for _ in range(n))
+    return ps[int(0.025 * n)], ps[int(0.975 * n) - 1]
+
+
+def interval_word(low, high, line=BLEED):
+    """Line 3: leaks = the whole interval at or past a line; holds = the whole interval strictly between the lines;
+    touching or crossing a line = can't tell. round(): in floats 1 - 0.8 is 0.19999999999999996."""
+    floor = round(1 - line, 10)
+    if low >= line or high <= floor:
+        return "leaks"
+    return "holds" if floor < low and high < line else "can't tell"
 
 
 # the Gemma Scope step: put the outcome direction into words (agreed with Sara 2026-10-24, before the run)
@@ -1350,6 +1377,47 @@ GUESS = ("the biggest features sit on the no-harm side and are about things turn
          "(step c's leniency reading) - written down 2026-10-24, before the run")
 
 
+def intervals(source="moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed"):
+    """95% intervals on the normal test's P, from the answers already in its log - no model. Line 1: the P recomputed
+    from the logged answers must match the log's P on every row, or stop."""
+    import re
+
+    import scorer
+
+    out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    text = (out / f"{source}.log").read_text()
+    fx = json.loads((pathlib.Path(__file__).parent / "fixtures" / "moral-luck-06-sep.json").read_text())
+    print(f"source log {source}.log | {BOOT_N} redraws, seed {BOOT_SEED}, 95% percentile interval | line {BLEED}")
+    # every answer: "--- plain A/no_harm/0" ... ">>> parsed: {...}"
+    blame = {}
+    for model_name, cid, leg, parsed in re.findall(r"^--- (plain|fixed) (\w)/(\w+)/\d+\n.*?^>>> parsed: (\{.*?\})$",
+                                                   text, re.M | re.S):
+        b = json.loads(parsed).get(fx["blame_field"])
+        if b is not None:
+            blame.setdefault((model_name, cid, leg), []).append(b)
+    logged = {}
+    for model_name, block in (("plain", "== PLAIN RESULT"), ("fixed", "== FIXED RESULT")):
+        for cid, word, p in re.findall(r"^  (\w): (\w+)\s+blame median .*?P ([0-9.]+)\)", text.split(block)[1], re.M):
+            logged.setdefault((model_name, cid), (word, float(p)))
+    print(f"answers read: {sum(map(len, blame.values()))} | logged P rows: {len(logged)}")
+    ok = True
+    for model_name in ("plain", "fixed"):
+        print(f"\n-- {model_name} gemma")
+        for cid, c in fx["cases"].items():
+            lo, hi = (blame[(model_name, cid, leg)] for leg in c["legs"])
+            word, p_log = logged[(model_name, cid)]
+            p = round(scorer.pairwise_p(lo, hi), 3)
+            if p != p_log:
+                print(f"STOP {model_name} {cid}: P from the answers {p} != logged {p_log}")
+                ok = False
+                continue
+            low, high = bootstrap_p(lo, hi)
+            print(f"READ {model_name} {cid} {c['name']:<5} | n {len(lo)}+{len(hi)} | P {p} | 95% interval "
+                  f"{low:.3f}-{high:.3f} | logged {word} | with interval: {interval_word(low, high)}")
+    print("\nCHECK: P from the logged answers matches the log on every row -> " + ("PASS" if ok else "FAIL"))
+    return ok
+
+
 def neuronpedia(i):
     """Feature i's public Neuronpedia record (labels, top tokens, top snippets). Only the number i goes out."""
     import urllib.request
@@ -1901,7 +1969,7 @@ if __name__ == "__main__":
                "eval-natural-look": lambda: eval_natural(look=True)}
     named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
              "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases,
-             "normal-test": normal_test, "gemma-scope": gemma_scope,
+             "normal-test": normal_test, "intervals": intervals, "gemma-scope": gemma_scope,
              "gemma-scope-base": lambda name: gemma_scope(name, BASE),
              "gemma-scope-look": lambda name: gemma_scope(name, look=True), "eval-controls": eval_controls,
              "dana-leak": dana_leak, "eval-direction": eval_direction,

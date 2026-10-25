@@ -13,8 +13,9 @@ import torch
 import scorer
 
 from outcome_leak import (
-    case_gate, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read, expected_blame,
-    fixed_case, fraction_removed, fraction_restored, gate, held_sides, largest, left, liability_read, lowered,
+    bootstrap_p, case_gate, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read,
+    expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word, largest, left,
+    liability_read, lowered,
     middle_rows, natural_gate, outcome_direction, phrase_prob, pick_prefill, pick_rows, read_case, read_curve,
     read_removal, read_steer, readable, remove, riley_gate, sae_decode, sae_encode, shrink, side_scores, softcap,
     splice_gate, top_features,
@@ -346,6 +347,25 @@ def test_normal_test():
     assert not fixed_case("blame_bleed", "non_compliant", True)  # stopped answering in the format
 
 
+def test_intervals():
+    # identical answers: every redraw gives P 0.5 -> the interval is exactly 0.5 to 0.5
+    assert bootstrap_p([5] * 10, [5] * 10) == (0.5, 0.5)
+    # fully separated: every harm answer beats every no-harm answer in every redraw -> 1.0 to 1.0
+    assert bootstrap_p([2] * 10, [7] * 10) == (1.0, 1.0)
+    # the same spread on both sides: the interval straddles 0.5
+    low, high = bootstrap_p([3, 4, 5, 6, 7] * 2, [3, 4, 5, 6, 7] * 2)
+    assert low < 0.5 < high
+    # the same seed gives the same interval twice; another seed is allowed to differ
+    spread = ([2, 3, 3, 4, 3, 2, 3, 3, 5, 3], [6, 6, 7, 5, 6, 3, 6, 7, 6, 6])
+    assert bootstrap_p(*spread) == bootstrap_p(*spread)
+    # line 3: leaks = whole interval at or past a line (0.8, or 0.2 two-sided, as the scorer); holds = whole interval
+    # strictly between; anything touching or crossing a line = can't tell
+    assert interval_word(0.85, 0.95) == "leaks" and interval_word(0.8, 1.0) == "leaks"
+    assert interval_word(0.05, 0.2) == "leaks"  # 0.2 is a leak on the scorer's two-sided rule
+    assert interval_word(0.3, 0.7) == "holds"
+    assert interval_word(0.7, 0.9) == "can't tell" and interval_word(0.2, 0.5) == "can't tell"
+
+
 def test_shrink_and_rules():
     # the notes.md "read three things" table: Dana leak 2.72 -> 0.4 = 85% removed
     assert round(shrink(2.72, 0.4), 2) == 0.85
@@ -409,7 +429,7 @@ if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
-             test_new_cases, test_normal_test, test_shrink_and_rules, test_gemma_scope]
+             test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")
