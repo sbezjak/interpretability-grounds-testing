@@ -425,11 +425,28 @@ def test_gemma_scope():
     assert splice_gate((2.5, 4.0), (2.0, 4.8), [0.9]) == []
 
 
+def test_count_line_numbers(tmp_path=None):
+    # a progress bar redraws itself with \r: grep and the editor see one line, so count.py must too
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as folder:  # deleted again after the test
+        log = pathlib.Path(tmp_path or folder) / "bar.log"
+        log.write_text("start\nLoading:   0%\rLoading: 100%\nREAD forward: entry row 15\n", newline="")
+        count = pathlib.Path(__file__).parent / "scripts" / "count.py"
+        out = subprocess.run([sys.executable, str(count), "READ forward", str(log)], capture_output=True,
+                             text=True).stdout
+    assert f"{log}:3: READ forward" in out, out  # line 3, as grep -n numbers it - not 4
+
+
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
-             test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope]
+             test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
+             test_count_line_numbers]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

@@ -42,8 +42,8 @@ def main(argv):
     for path in argv[2:]:
         for f in files_under(path):
             try:
-                with open(f, encoding="utf-8") as fh:
-                    lines = fh.read().splitlines()
+                with open(f, encoding="utf-8", newline="") as fh:  # newline="": a progress bar's \r must not split lines
+                    lines = fh.read().split("\n")  # so line numbers match grep, the editor and the report
             except (OSError, UnicodeDecodeError) as e:
                 errors.append(f"{f}: {e}")
                 continue
