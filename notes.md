@@ -35,12 +35,36 @@ Frontier models and qwen gave more blame after harm (`theory-grounds-testing`, m
 4. **The answer.** After the last layer, the notes at the final token turn into a probability for every possible next
    token. For Dana, that's how likely the model is to write each blame number.
 
+**The residual stream, with one number.** Say one note starts at 3.0 for a word. Layer 1 adds +1.0, so it's 4.0.
+Layer 2 adds -0.5, so it's 3.5. Layer 3 reads 3.5 = 3.0 + 1.0 - 0.5: one number that holds everything so far, the way
+a bank balance shows the total, not each payment. Layers only add, so what an early layer wrote is still there at the
+end unless a later one takes it away - that's why a direction can be subtracted again (step 3). In gemma's code it's
+one line, `hidden_states = residual + hidden_states`, twice per layer.
+
+**Two ways information moves.**
+- **Up**, through the layers, in each token's own notes - the residual stream.
+- **Across**, between tokens. Each layer has two parts. *Attention* reads the other tokens' notes and adds what it
+  found to this token's notes; then the *MLP* works on this token's notes alone and adds its result. That's how "the
+  crash" gets from its own words to the last token, where the blame number is read.
+
+The layers are called **hidden** only because normal use shows just the final answer. The notes in between are plain
+numbers anyone can read with a hook (`hidden_states` in gemma's code) - hard to read, not secret.
+
 ## Step 1 - measure the leak exactly
 
 No sampling, no repeats. Read the probability the model gives each number and take the average weighted by
 probability - the *expected blame*. Do it for both prompts.
 
 **Leak = expected blame (harm) - expected blame (no harm).**
+
+**Digit mass - is it answering with a number at all?** At each step the model gives a probability to every one of its
+~256,000 tokens, adding up to 1 - a pie with 256,000 slices. The digit mass is the 10 digit slices (0-9) together.
+Dana: 0.9999, so it's clearly answering with a number. Under 0.9 the run stops: too much of the pie is words like "I"
+or "**", and the digits would describe only part of what the model does.
+
+The blame is read from the digits alone (divided by the digit mass), so a word slice can't drag it down. Pie: 25% "2",
+25% "4", 50% the word "The". Wrong: 0.25 x 2 + 0.25 x 4 = 1.5, as if "The" meant blame 0. Right: between 2 and 4 it's
+50/50, so blame 3 (1.5 / 0.5), with mass 0.5 reported next to it. The canned test pins exactly this pie.
 
 Exact, judge-free, and the same every run. If it's near zero, the model doesn't leak and there's nothing to look
 inside - stop there.
@@ -795,6 +819,11 @@ Neither fixes the main blocker: a Dana prompt that a model believes is real.
 ## Words used here
 
 - **Residual stream** - the running notes per token that every layer reads and writes.
+- **Attention** - the part of each layer that reads other tokens' notes: it moves information across tokens. The
+  **MLP** is the part that works on one token's notes alone.
+- **Hidden states** - gemma's code name for the notes between layers. "Hidden" = not shown in normal use, not secret.
+- **Digit mass** - how much of the next-token probability sits on the 10 digits; under 0.9 = not answering with a
+  number.
 - **Activation** - the numbers in those notes at one layer.
 - **Activation patching** - swapping activations from one run into another to see what changes.
 - **Hook** - a function attached to a layer that can read or replace its output.

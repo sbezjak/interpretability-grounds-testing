@@ -447,7 +447,7 @@ SANITY_TOL = 1e-3  # an honesty check passes if expected blame moves by at most 
 
 
 def prompts(key="A", fixture=FIXTURE):
-    """One case's prompts (A = Dana): leg + question + answer format, joined as moral-luck-02 did, 0-10 -> 0-9."""
+    """One case's user messages (A = Dana): leg + question + answer format, joined as moral-luck-02 did, 0-10 -> 0-9."""
     fx = json.loads(fixture.read_text())
     case = fx["cases"][key]
     contract = fx["output_contract"]
@@ -462,7 +462,7 @@ def load(model_id=MODEL):
 
     # base gemma-2-2b has -it's vocabulary but no chat template, so it borrows -it's tokenizer; any other model its own
     tok = AutoTokenizer.from_pretrained(MODEL if model_id == BASE else model_id)
-    # eager attention: gemma 2 caps its attention scores, and only the eager path does that.
+    # eager attention: gemma 2 caps its attention scores; sdpa skips that, and flash-attention does not run on a Mac.
     # device_map loads straight onto the GPU - loading to memory first and then copying needs ~2x on 8 GB.
     model = AutoModelForCausalLM.from_pretrained(
         model_id, dtype=torch.bfloat16, attn_implementation="eager", device_map=DEVICE
@@ -512,7 +512,7 @@ def run(model, ids, patch=None):
 
         return touch
 
-    # row 0 is the input of layer 1; rows 1-26 are each layer's output. Hooks edit in place, return nothing.
+    # row 0 is the input of layer 1; row L (1 and up) is layer L's output. Hooks edit in place, return nothing.
     hooks = [layers[0].register_forward_pre_hook(lambda m, a, k, t=at(0): t(a[0] if a else k["hidden_states"]),
                                                  with_kwargs=True)]
     hooks += [layer.register_forward_hook(lambda m, a, o, t=at(L + 1): t(o[0] if isinstance(o, tuple) else o))
@@ -735,7 +735,8 @@ def patching(name):
     print(f"check: lens at row 26 vs the real answer, largest difference {diff:.6f} -> "
           f"{'PASS' if lens_ok else 'FAIL'} (tolerance {SANITY_TOL})")
 
-    print("\n== STEP 2. activation patching at the last token, every row (0 = before any layer, a control)")
+    print("\n== STEP 2. activation patching at the last token, every row (0 = before any layer: same last token in "
+          "both legs, so a plumbing control)")
     # forward: harm notes into the no-harm run; reverse: no-harm notes into the harm run
     curves = {}
     for direction, into, donor, frac in (("forward", "no_harm", "harm", fraction_restored),
