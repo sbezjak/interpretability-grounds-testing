@@ -192,6 +192,7 @@ def case_gate(gaps, masses):
     choice, harm, liability = gaps
     reasons = [f"|choice leak| {abs(choice):.3f} < {LEAK_MIN}"] if abs(choice) < LEAK_MIN else []
     reasons += [f"harm-blame gap {harm:.3f} < {GAP_MIN}"] if harm < GAP_MIN else []
+    # the liability gap is a P(owes) difference (0-1), not blame points: GAP_MIN's 0.3 reused as the same number
     reasons += [f"liability gap {liability:.3f} < {GAP_MIN}"] if liability < GAP_MIN else []
     reasons += [f"a read's mass {min(masses):.3f} < {MASS_MIN}"] if min(masses) < MASS_MIN else []
     return reasons
@@ -331,7 +332,7 @@ def natural_gate(p_eval, masses, leak):
     eval_gate holds on it. Returns the stop reasons; empty = go on."""
     stop = [f"{leg}: no cue P(EVALUATION) {p:.3f} > {REAL_MAX} - reads as a test"
             for leg, p in p_eval["plain"].items() if not p <= REAL_MAX]
-    if not abs(leak) >= LEAK_MIN:
+    if not round(abs(leak), 9) >= LEAK_MIN:  # leak is a subtraction: 3.02 - 2.72 is 0.2999999999999998
         stop.append(f"no cue |leak| {abs(leak):.3f} < {LEAK_MIN}")
     return stop + eval_gate(p_eval, masses)
 
@@ -425,9 +426,9 @@ def read_steer(plain, steered, masses, random_moves):
     random arrows. Returns MOVED / NOT MOVED / MOVED, NOT SPECIFIC / FLAG."""
     if min(masses) < MASS_MIN:
         return f"FLAG: steered digit mass {min(masses):.3f} < {MASS_MIN} - not answering with a number"
-    if not abs(steered - plain) >= MOVE_MIN:
+    if not round(abs(steered - plain), 9) >= MOVE_MIN:  # round as in eval_gate: exactly 0.3 counts
         return "NOT MOVED"
-    if max(abs(m) for m in random_moves) >= MOVE_MIN:
+    if max(round(abs(m), 9) for m in random_moves) >= MOVE_MIN:
         return "MOVED, NOT SPECIFIC (a random arrow moved it too)"
     return "MOVED"
 
@@ -907,7 +908,7 @@ def removal_sturdy(name):
     def removed(who, leg, L, direction, mode):
         if mode == "last":  # the first run's way: the saved notes, minus u, swapped in at the last token
             patch = (L, remove(base[who, leg][0][L], direction))
-        else:  # every token's notes at row L lose their part along u
+        else:  # every token's notes at row L lose their part along u - u is still the last token's direction
             patch = (L, lambda hs: remove(hs, None if direction is None else direction.to(hs.device)))
         return blame(run(model, ids[who, leg], patch)[1])
 
@@ -1289,7 +1290,7 @@ def normal_test(name):
     print(f"fixture {fx['fixture_id']} verbatim (0-10, no prefill) | cases {order} | n {n} | sampling: temperature 1.0, "
           f"no top-k / top-p cut, seed {SAMPLE_SEED} per story | max new tokens {MAX_NEW}")
 
-    def verbatim(cid, leg):  # exactly as run_luck.py builds it for the paid models
+    def verbatim(cid, leg):  # exactly as theory-grounds-testing's run_luck.py builds it for the paid models
         c = cases[cid]
         return "\n\n".join([c["legs"][leg], fx["question"].format(name=c["name"]),
                              fx["output_contract"].format(name=c["name"])])
@@ -1317,7 +1318,7 @@ def normal_test(name):
                 reps.setdefault(cid, {})[leg] = []
                 for i, seq in enumerate(out[:, ids.shape[1]:]):
                     text = tok.decode(seq, skip_special_tokens=True).strip()
-                    capped += not any(t in (1, 107) for t in seq.tolist())  # no end-of-turn: hit MAX_NEW
+                    capped += not any(t in (1, 107) for t in seq.tolist())  # no <eos> (1) or <end_of_turn> (107): hit MAX_NEW
                     parsed = scorer.parse_fields(text, fx["fields"], name_tol=tol)
                     reps[cid][leg].append(parsed)
                     print(f"\n--- {model_name} {cid}/{leg}/{i}\n{text}\n>>> parsed: "
@@ -1363,7 +1364,8 @@ def normal_test(name):
         pr, fr = results["plain"]["cases"].get(cid), results["fixed"]["cases"].get(cid)
         say = lambda r: "not scored" if r is None else f"{r['outcome']} P {r.get('pairwise_p')}"
         verdict = ("FIXED" if pr and fr and fixed_case(pr["outcome"], fr["outcome"], riley_moves)
-                   else "nothing to fix" if pr and pr["outcome"] != "blame_bleed" else "NOT FIXED")
+                   else "not scored" if pr is None
+                   else "nothing to fix" if pr["outcome"] != "blame_bleed" else "NOT FIXED")
         flag = "  (built the direction - not a test)" if cid in "BC" else ""
         print(f"READ {cid} {cases[cid]['name']:5s} | plain {say(pr)} | fixed {say(fr)} | {verdict}{flag}")
     print(f"READ D Riley (control) | plain {'moves' if 'D' in results['plain']['scale_moves'] else 'stuck'} | fixed "
@@ -1387,7 +1389,7 @@ def intervals(source="moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed"):
 
     out = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
     text = (out / f"{source}.log").read_text()
-    fx = json.loads((pathlib.Path(__file__).parent / "fixtures" / "moral-luck-06-sep.json").read_text())
+    fx = json.loads(FIXTURE_06.read_text())
     print(f"source log {source}.log | {BOOT_N} redraws, seed {BOOT_SEED}, 95% percentile interval | line {BLEED}")
     # every answer: "--- plain A/no_harm/0" ... ">>> parsed: {...}"
     blame = {}
@@ -1437,6 +1439,7 @@ def gemma_scope(name, model_id=MODEL, look=False):
     import hashlib
 
     import numpy as np
+    import transformers
     from huggingface_hub import hf_hub_download
 
     if look:
@@ -1484,7 +1487,8 @@ def gemma_scope(name, model_id=MODEL, look=False):
         if not look:
             return True
         print("LOOK MODE: going on past the failed gate - untrusted labels from here")
-    print(f"GATE GO: the rebuilt notes keep Dana's leak and Riley's gap within {SPLICE_MAX:.0%}, number answers")
+    else:
+        print(f"GATE GO: the rebuilt notes keep Dana's leak and Riley's gap within {SPLICE_MAX:.0%}, number answers")
     if model_id != MODEL:
         return True
 
@@ -1511,7 +1515,7 @@ def gemma_scope(name, model_id=MODEL, look=False):
     print(f"\n== LABELS (line 5): Neuronpedia, {NEURONPEDIA} (an AI's guess from base-model text - hints, not proof)")
     print("ours = the tokens the feature's arrow pushes up most through gemma-2-2b-it's reader - an index check "
           "against Neuronpedia's 'up', which uses the base model")
-    tok = __import__("transformers").AutoTokenizer.from_pretrained(MODEL)
+    tok = transformers.AutoTokenizer.from_pretrained(MODEL)
     for r, i in enumerate(top, 1):
         print(f"\n#{r} feature {i} ({d[i]:+.2f}, on in {'harm' if d[i] > 0 else 'no harm'}) "
               f"https://www.neuronpedia.org/{NEURONPEDIA}/{i}")
@@ -1670,7 +1674,7 @@ def eval_natural(look=False, model_id=MODEL, prefills=NATURAL_PREFILLS):
             label_masses.append(mass)
             print(f"{cue:5s} {leg:8s} | P(EVALUATION) {p:.4f} (mass {mass:.4f}) | " +
                   " | ".join(f"{lab} " + " ".join(f"{t!r}:{x:.4f}" for t, x in phrases[lab]) for lab in EVAL_LABELS))
-    if look:
+    if pre is None:  # only a look gets here with a failed number read
         print()
         for leg in dana:
             print(f"LOOK {leg}: P(EVALUATION) no cue {p_eval['plain'][leg]:.4f} (reads as real if <= {REAL_MAX}) | "
@@ -1806,7 +1810,8 @@ def dana_leak(model_id):
 
 @contextlib.contextmanager
 def steered(model, vecs, k):
-    """Steered gemma: after each layer L in vecs, every token's notes lose k x vecs[L] - pushed from test toward real."""
+    """Steered gemma: after each layer L in vecs, every token's notes lose k x vecs[L] (for d = test - real, a push
+    toward real)."""
     def at(v):
         def edit(m, a, o):  # every answer in a batch, every token
             hs = o[0] if isinstance(o, tuple) else o

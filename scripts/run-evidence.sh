@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # Capture a run's FULL stdout+stderr to a durable evidence log - the tier-3
 # MECHANISM behind the "preserve the full run log, never truncate through
-# tail/head" rule in CLAUDE.md. The raw log carries the receipts (provider
-# request_id / batch_id, verbatim usage, per-item traces) a claim later rests on.
+# tail/head" rule in CLAUDE.md. The raw log carries the receipts a claim later
+# rests on (here: the READ lines and per-row tables; in an API project: the
+# provider request_id / batch_id, verbatim usage, per-item traces).
 #
 # Usage: scripts/run-evidence.sh <name> --eta "<estimate (source)>" --cost "<estimate (source)>" -- <command...>
 #   e.g. scripts/run-evidence.sh stakes-triage-01-opus55 \

@@ -2,8 +2,8 @@
 """Count a term in files and print every hit - the receipt for any "X is (not) in the source" claim.
 
 An errored search prints nothing, and nothing reads as "0 hits". This script makes the two
-impossible to confuse: every failure (bad regex, missing path, unreadable file, zero files
-scanned) exits non-zero with a message, and a real result always ends with a count line.
+impossible to confuse: every failure (bad regex, missing path, unreadable file, a path with
+zero files scanned) exits non-zero with a message, and a real result always ends with a count line.
 
 Usage: scripts/count.py <regex> <path> [<path> ...]    (case-insensitive; dirs are walked)
 Example: scripts/count.py 'interpretab' papers/
@@ -13,7 +13,7 @@ import re
 import sys
 
 SKIP_DIRS = {".git", ".venv", "__pycache__", "node_modules"}
-EXTS = (".md", ".txt", ".py", ".log", ".json", ".jsonl", ".sh")
+EXTS = (".md", ".txt", ".py", ".log", ".json", ".jsonl", ".sh", ".html")
 
 
 def files_under(path):
@@ -38,8 +38,9 @@ def main(argv):
     if missing:
         sys.exit(f"SEARCH FAILED: path not found: {', '.join(missing)}")
 
-    scanned, hits, errors = 0, 0, []
+    scanned, hits, errors, empty = 0, 0, [], []
     for path in argv[2:]:
+        before = scanned
         for f in files_under(path):
             try:
                 with open(f, encoding="utf-8", newline="") as fh:  # newline="": a progress bar's \r must not split lines
@@ -53,11 +54,13 @@ def main(argv):
                 if n:
                     hits += n
                     print(f"{f}:{i}: {'(x%d) ' % n if n > 1 else ''}{line.strip()[:200]}")
+        if scanned == before:
+            empty.append(path)
 
     for e in errors:
         print(f"UNREADABLE: {e}", file=sys.stderr)
-    if scanned == 0:
-        sys.exit("SEARCH FAILED: 0 files scanned - no result, not 0 hits")
+    if empty:  # per path (2026-10-26: "notes.md reports" scanned notes.md only - .html was not read - and passed)
+        sys.exit(f"SEARCH FAILED: 0 files scanned in {', '.join(empty)} - no result there, not 0 hits")
     # the scope is part of the receipt (2026-10-13: a 0 over two hand-picked files was reported as "unexplained"; the
     # text was in a file not searched). The count line states what it covers, so quoting it quotes the scope.
     root = os.path.realpath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))

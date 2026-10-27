@@ -2,8 +2,8 @@
 # PreToolUse(Bash) BLOCKING hook - the tier-3 GUARD for the CLAUDE.md rule
 # "End commit messages at the body. The user is the sole author."
 # Denies any `git commit` whose message carries a Co-Authored-By trailer or a
-# Claude-Session line - the harness's ready-made default that outranked the
-# stated rule once (see working_with_ai.md, the trailer incident).
+# Claude-Session line - the harness's ready-made default, which once outranked
+# the stated rule and made Claude a contributor on GitHub.
 #
 # Reads the hook JSON on stdin; on a match, emits a deny decision as JSON on
 # stdout and exits 0. Otherwise prints nothing (allow).

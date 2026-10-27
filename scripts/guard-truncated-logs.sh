@@ -33,7 +33,7 @@ while IFS= read -r part; do
 done <<< "$parts"
 
 if [ "$hit" = 1 ]; then
-  msg='[evidence-guard] This pipes a run through tail/head - the truncated part is where the receipts (request_id / batch_id / per-item traces) live. Capture the FULL stream instead: scripts/run-evidence.sh <name> -- <cmd>  (or  > evidence/raw-logs/<name>.log 2>&1).'
+  msg='[evidence-guard] This pipes a run through tail/head - the truncated part is where the receipts (READ lines, per-row tables, request ids) live. Capture the FULL stream instead: scripts/run-evidence.sh <name> -- <cmd>  (or  > evidence/raw-logs/<name>.log 2>&1).'
   jq -nc --arg m "$msg" '{systemMessage:$m, hookSpecificOutput:{hookEventName:"PreToolUse", additionalContext:$m}}'
 fi
 exit 0

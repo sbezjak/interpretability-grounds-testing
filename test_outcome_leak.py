@@ -3,7 +3,8 @@
 Every number below is worked out by hand, so a pass means the code does the arithmetic we agreed on.
 Runnable two ways:
     .venv/bin/python test_outcome_leak.py       (plain asserts + summary)
-    pytest test_outcome_leak.py                 (test_* discovery)
+    .venv/bin/python -m pytest test_outcome_leak.py   (test_* discovery; pytest is not in requirements.txt -
+                                                       .venv/bin/pip install pytest first)
 """
 
 import math
@@ -14,8 +15,8 @@ import scorer
 
 from outcome_leak import (
     bootstrap_p, case_gate, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read,
-    expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word, largest, left,
-    liability_read, lowered,
+    FIRST_REMOVAL, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word,
+    largest, left, liability_read, lowered, read_removal_log, step_a_row,
     middle_rows, natural_gate, outcome_direction, phrase_prob, pick_prefill, pick_rows, read_case, read_curve,
     read_removal, read_steer, readable, remove, riley_gate, sae_decode, sae_encode, shrink, side_scores, softcap,
     splice_gate, top_features,
@@ -232,6 +233,7 @@ def test_eval_natural():
     assert natural_gate(test_like, [0.99], -0.2) == ["harm: no cue P(EVALUATION) 0.700 > 0.5 - reads as a test",
                                                      "no cue |leak| 0.200 < 0.3"]
     assert natural_gate({**ex, "plain": {"harm": 0.5}}, [0.99], -0.3) == []  # 0.5 and |leak| 0.3 are on the line: go
+    assert natural_gate(ex, [0.99], 3.02 - 2.72) == []  # a leak of 0.3 from a subtraction is on the line too
     # step 0's rule rides along: the cues 0.4 apart in no_harm but only 0.1 in harm -> stop
     cues = {**ex, "test": {"no_harm": 0.65, "harm": 0.35}}
     assert natural_gate(cues, [0.99], 3.4) == ["harm: P(EVALUATION) test cue - real cue +0.100 < 0.2"]
@@ -275,6 +277,9 @@ def test_eval_direction():
     assert read_steer(2.72, 2.9, [0.99], [0.1]) == "NOT MOVED"
     assert read_steer(2.72, 2.0, [0.99], [0.1, -0.31]) == "MOVED, NOT SPECIFIC (a random arrow moved it too)"
     assert read_steer(2.72, 3.5, [0.99, 0.8], [0.1]) == "FLAG: steered digit mass 0.800 < 0.9 - not answering with a number"
+    # exactly 0.3 counts, also when it comes from a subtraction (3.02 - 2.72 is 0.2999999999999998 in floats)
+    assert read_steer(2.72, 3.02, [0.99], [0.1]) == "MOVED"
+    assert read_steer(2.72, 3.5, [0.99], [3.02 - 2.72]) == "MOVED, NOT SPECIFIC (a random arrow moved it too)"
     # middle rows: 34 layers -> ceil(8.5) = 9 to ceil(25.5) = 26; 26 layers -> 7 to 20
     assert list(middle_rows(34)) == list(range(9, 27)) and list(middle_rows(26)) == list(range(7, 21))
     # the gemma-2-2b flaw: the best effect sits at the last row; limited to the middle, row 20 wins, window 18-22
@@ -441,12 +446,64 @@ def test_count_line_numbers(tmp_path=None):
     assert f"{log}:3: READ forward" in out, out  # line 3, as grep -n numbers it - not 4
 
 
+def test_count_every_path():
+    # the report is .html: it must be read; a path with no readable file is a failed search, not 0 hits
+    import pathlib
+    import subprocess
+    import sys
+    import tempfile
+
+    count = pathlib.Path(__file__).parent / "scripts" / "count.py"
+    with tempfile.TemporaryDirectory() as folder:
+        reports, pictures = pathlib.Path(folder) / "reports", pathlib.Path(folder) / "pictures"
+        reports.mkdir()
+        pictures.mkdir()
+        (reports / "audit.html").write_text("<td>reaches the answer at layer 15, sharply</td>\n")
+        (pictures / "curve.png").write_bytes(b"\x89PNG")
+        found = subprocess.run([sys.executable, str(count), "sharp", str(reports)], capture_output=True, text=True)
+        empty = subprocess.run([sys.executable, str(count), "sharp", str(reports), str(pictures)],
+                               capture_output=True, text=True)
+    assert found.returncode == 0 and "== 1 occurrences of 'sharp' in 1 files scanned" in found.stdout, found
+    assert empty.returncode != 0 and f"0 files scanned in {pictures}" in empty.stderr, empty
+
+
+def test_run_evidence():
+    # the wrapper every run goes through: no number in the estimate -> no run; the command's own exit code comes back;
+    # a log that exists is never overwritten
+    import os
+    import pathlib
+    import subprocess
+    import tempfile
+
+    script = pathlib.Path(__file__).parent / "scripts" / "run-evidence.sh"
+    with tempfile.TemporaryDirectory() as folder:  # RUN_EVIDENCE_LOGDIR keeps the test logs out of evidence/
+        env = {**os.environ, "RUN_EVIDENCE_LOGDIR": folder}
+        go = lambda name, eta, cmd: subprocess.run(["bash", str(script), name, "--eta", eta, "--cost", "0 (local)", "--",
+                                                    *cmd], capture_output=True, text=True, env=env)
+        vague = go("vague", "soon", ["true"])
+        failed = go("failed", "1s", ["bash", "-c", "echo out; exit 7"])
+        again = go("failed", "1s", ["true"])  # same name: must refuse, or failed.log would end exit=0
+        vague_ran = (pathlib.Path(folder) / "vague.log").exists()
+        log = (pathlib.Path(folder) / "failed.log").read_text()
+    assert vague.returncode == 2 and not vague_ran and "with a number" in vague.stderr, vague
+    assert failed.returncode == 7 and "\nout\n" in log, failed
+    assert again.returncode == 2 and "never overwritten" in again.stderr and "[run-evidence] exit=7 " in log, (again, log)
+
+
+def test_log_readers():
+    # the committed logs, no model. Row 17 sits in two tables of step a's log (:43 last token, :81 every token);
+    # fixed gemma is checked against the every-token one
+    assert step_a_row(17) == (0.824, 3.1725)  # dana-outcome-removal-alltokens-gemma-2-2b-it.log:81, not :43's +1.2309
+    rows = read_removal_log(FIRST_REMOVAL)  # dana-outcome-removal-gemma-2-2b-it.log:43, row 17
+    assert len(rows) == 27 and rows[17] == (1.2309, 0.548, 3.3624, 0.978, -0.001)
+
+
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
              test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
-             test_count_line_numbers]
+             test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

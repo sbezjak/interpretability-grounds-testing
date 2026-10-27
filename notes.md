@@ -551,6 +551,12 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   -> save the harm notes per layer -> rerun no-harm once per layer with the hook -> one table, one curve.
 - A detail the smoke has to settle: gemma splits numbers into single digits, so "10" is two tokens. Either use a scale
   where every answer is one token (1-9), or handle the two-token case. Decided before the run, not after.
+- Every run goes through `scripts/run-evidence.sh`: it saves the whole output to `evidence/raw-logs/<name>.log`,
+  refuses to overwrite a log that exists, and ends it with `[run-evidence] exit=<code>`. The first smoke tries show
+  what a failed run looks like, and none of them is a result: `dana-smoke-gemma-2-2b-it.log` has no exit line (the
+  memory was full before it started; stopping it stopped the wrapper too), `-run2` ends `exit=1` (a missing package,
+  `accelerate`), `-run3` and `-run4-diagnose` end `exit=143` (stopped by hand while gemma waited on memory). The
+  smoke that worked is `-m5` (`exit=0`).
 
 ## Why gemma-2-2b-it
 
@@ -739,8 +745,9 @@ LOOK k=2 | leak +1.0003 -> +1.9435, move +0.9432 | largest random -1.220 | FLAG:
 
 At its own size the arrow is a hammer, not a "less test" push: the test messages' gaps stayed at +20 to +24, the real
 messages moved the *wrong* way (-15 -> about -8) while gemma started losing the answer format (label mass 0.53-0.79),
-and Dana's leak doubled - but random arrows of the same size moved it anywhere from -1.24 to +2.93. Gemma's answer
-began to break (*"TONE IT-WOOODDana absolutely deserves..."*); at 2x it was gibberish (*"anoes tonenaöööö..."*).
+and Dana's leak doubled - but random arrows of the same size moved it anywhere from -1.24 to +2.93 (their digit mass
+was not logged, so some may not have been number answers). Gemma's answer began to break (*"TONE IT-WOOODDana
+absolutely deserves..."*); at 2x it was gibberish (*"anoes tonenaöööö..."*).
 
 **The final try - casual Dana on 4b** (eval-awareness-dana-natural-gemma-3-4b-it). Instead of a dose sweep: the
 direction-free test that failed on gemma-2-2b only for technical reasons. 4b's read works now, so: does casual Dana
@@ -773,7 +780,8 @@ else in the sentence (e.g. "moral reasoning") may have made it more careful. Wor
   arrow against. The question can't be answered on it.
 - **gemma-3-4b-it:** its own read works, it leaks on Dana (+1, as big as a real ground), and Dana reads as a test. A
   test-vs-real arrow is there in its late layers, but not steady enough under the agreed check, and at its own size a
-  push wrecks the model before it shifts its sense of "test" - a random arrow wrecks it as much. The tension is the
+  push wrecks the model before it shifts its sense of "test" - and random arrows of the same size moved the leak as
+  much (whether they broke the number format too was not logged). The tension is the
   result: the read is so sure (gaps 14-25) that a push big enough to move it breaks the model. Even casual Dana reads
   as a test (1.0000); a test cue halved its leak - a lead, not a finding.
 - **The main blocker is the prompts, not the models:** every version of Dana read as a test on every model tried
