@@ -1,5 +1,6 @@
-"""Dana outcome leak in gemma-2-2b-it: measure it, then find where the outcome reaches the answer.
+"""Dana outcome leak in gemma-2-2b-it: measure it, find where it enters, take it out, test the fix.
 
+Also here: the Gemma Scope look at the outcome direction and the eval-awareness check (both stopped at their gates).
 Plain explanation, the rules agreed before each run, and the results: notes.md.
 Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bottom half: the model.
 

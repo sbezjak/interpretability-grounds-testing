@@ -18,7 +18,7 @@ from outcome_leak import (
     FIRST_REMOVAL, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word,
     largest, left, liability_read, lowered, read_removal_log, step_a_row,
     middle_rows, natural_gate, outcome_direction, phrase_prob, pick_prefill, pick_rows, read_case, read_curve,
-    read_removal, read_steer, readable, remove, riley_gate, sae_decode, sae_encode, shrink, side_scores, softcap,
+    read_removal, read_steer, readable, remove, riley_gate, run, sae_decode, sae_encode, shrink, side_scores, softcap,
     splice_gate, top_features,
 )
 
@@ -498,12 +498,47 @@ def test_log_readers():
     assert len(rows) == 27 and rows[17] == (1.2309, 0.548, 3.3624, 0.978, -0.001)
 
 
+def test_run():
+    # run() and its hooks on a 3-layer toy, not gemma: 2 tokens of 2 numbers, and each layer adds the first token's
+    # notes to every token - a stand-in for attention, so an edit to the first token shows up in the last one.
+    # Start: first [1, 0], last [0, 1]. Last token after each layer: [1, 1], [3, 1], [7, 1].
+    class AddFirst(torch.nn.Module):
+        def forward(self, h):
+            return h + h[:, :1]
+
+    class Toy(torch.nn.Module):
+        def __init__(self):
+            super().__init__()
+            self.model = torch.nn.Module()
+            self.model.layers = torch.nn.ModuleList([AddFirst() for _ in range(3)])
+
+        def forward(self, ids, logits_to_keep=1):
+            h = torch.tensor([[[1.0, 0.0], [0.0, 1.0]]])  # the notes; ids are not used
+            for layer in self.model.layers:
+                h = layer(h)
+            return type("Out", (), {"logits": h[:, -logits_to_keep:]})  # the reader: the last notes are the scores
+
+    toy, ids = Toy(), torch.tensor([[0, 1]])
+    rows = lambda patch=None: run(toy, ids, patch)[0].tolist()
+    assert rows() == [[0, 1], [1, 1], [3, 1], [7, 1]]
+    assert torch.allclose(run(toy, ids)[1], torch.softmax(torch.tensor([7.0, 1.0]), -1))
+    # notes at row 1, last token only: the rows after follow them (+2, +4 from the first token, which is untouched)
+    assert rows((1, torch.tensor([0.0, 5.0]))) == [[0, 1], [0, 5], [2, 5], [6, 5]]
+    # row 0 is the hook before layer 1
+    assert rows((0, torch.tensor([0.0, 3.0]))) == [[0, 3], [1, 3], [3, 3], [7, 3]]
+    # an edit is applied to every token: the first token is zeroed too, so nothing comes back (last token only: [2, 0])
+    assert rows((1, lambda h: h * 0)) == [[0, 1], [0, 0], [0, 0], [0, 0]]
+    # the hooks are gone afterwards: a plain run is plain again
+    assert not toy.model.layers[0]._forward_pre_hooks and not any(l._forward_hooks for l in toy.model.layers)
+    assert rows() == [[0, 1], [1, 1], [3, 1], [7, 1]]
+
+
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
              test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
-             test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers]
+             test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers, test_run]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")
