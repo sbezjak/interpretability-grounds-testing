@@ -18,7 +18,7 @@ from outcome_leak import (
     FIRST_REMOVAL, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word,
     largest, left, liability_read, lowered, read_removal_log, step_a_row,
     middle_rows, natural_gate, outcome_direction, phrase_prob, pick_prefill, pick_rows, read_case, read_curve,
-    read_removal, read_steer, readable, remove, riley_gate, run, sae_decode, sae_encode, shrink, side_scores, softcap,
+    read_other, read_removal, read_steer, readable, remove, riley_gate, run, sae_decode, sae_encode, shrink, side_scores, softcap,
     splice_gate, top_features,
 )
 
@@ -488,6 +488,38 @@ def test_run_evidence():
     assert vague.returncode == 2 and not vague_ran and "with a number" in vague.stderr, vague
     assert failed.returncode == 7 and "\nout\n" in log, failed
     assert again.returncode == 2 and "never overwritten" in again.stderr and "[run-evidence] exit=7 " in log, (again, log)
+    # the log= path is the repo's own: a copy of the script in a made-up repo writes evidence/raw-logs/..., and a
+    # log folder under the home folder shows as ~/...
+    import shutil
+    with tempfile.TemporaryDirectory() as home:
+        (pathlib.Path(home) / "repo" / "scripts").mkdir(parents=True)
+        copy = shutil.copy(script, pathlib.Path(home) / "repo" / "scripts")
+        env = {k: v for k, v in os.environ.items() if k != "RUN_EVIDENCE_LOGDIR"} | {"HOME": home}
+        subprocess.run(["bash", copy, "inside", "--eta", "1s", "--cost", "0", "--", "true"], env=env, check=True,
+                       capture_output=True)
+        subprocess.run(["bash", copy, "outside", "--eta", "1s", "--cost", "0", "--", "true"], env=env | {
+            "RUN_EVIDENCE_LOGDIR": f"{home}/logs"}, check=True, capture_output=True)
+        inside = (pathlib.Path(home) / "repo" / "evidence" / "raw-logs" / "inside.log").read_text()
+        outside = (pathlib.Path(home) / "logs" / "outside.log").read_text()
+    assert inside.endswith(" log=evidence/raw-logs/inside.log\n") and home not in inside, inside
+    assert outside.endswith(" log=~/logs/outside.log\n") and home not in outside, outside
+
+
+def test_other_direction():
+    # step d at the fix row, worked by hand. Riley gap 3.44 -> 1.00 = shrink 0.71 (a real direction), then Dana:
+    assert read_other(0.71, 1.0, 2.50 / 2.72, 1.0).startswith("SPECIFIC")  # leak kept 0.92
+    assert read_other(0.71, 1.0, 1.00 / 2.72, 1.0).startswith("SHARED")  # kept 0.37: the leak went too
+    assert read_other(0.71, 1.0, 0.65, 1.0) == "PARTLY SHARED"
+    # the lines themselves count (>= and <=), as in step 3
+    assert read_other(0.5, 0.9, 0.8, 0.9).startswith("SPECIFIC")
+    assert read_other(0.5, 0.9, 0.5, 0.9).startswith("SHARED")
+    # a leak that grows is still kept; one that flips sign (kept below 0) went
+    assert read_other(0.71, 1.0, 1.2, 1.0).startswith("SPECIFIC")
+    assert read_other(0.71, 1.0, -0.3, 1.0).startswith("SHARED")
+    # the Riley direction barely moves Riley's own gap -> the control cannot be read, whatever Dana does
+    assert read_other(0.3, 1.0, 0.92, 1.0) == "STOP: the Riley direction takes only 0.300 of Riley's gap out (< 0.5)"
+    # not answering with a number in either case -> no read
+    assert read_other(0.71, 0.5, 0.92, 1.0) == read_other(0.71, 1.0, 0.92, 0.89) == "UNREADABLE: digit mass < 0.9"
 
 
 def test_log_readers():
@@ -538,7 +570,8 @@ if __name__ == "__main__":
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
              test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
-             test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers, test_run]
+             test_other_direction, test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers,
+             test_run]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

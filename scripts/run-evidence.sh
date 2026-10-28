@@ -61,6 +61,9 @@ printf '[run-evidence] %s | %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*" | tee "$
 printf '[run-evidence] predicted eta=%s | cost=%s\n' "$eta" "$cost" | tee -a "$logfile"
 "$@" 2>&1 | tee -a "$logfile"
 status=${PIPESTATUS[0]}
+# The log path as the repo sees it, so the folders above the repo (a home folder's name) never land in a log
+shown="${logfile#"$repo_root"/}"
+shown="${shown/#"$HOME"/~}"
 printf '[run-evidence] exit=%s elapsed=%ss (predicted eta=%s) log=%s\n' \
-  "$status" "$(( $(date +%s) - start ))" "$eta" "$logfile" | tee -a "$logfile"
+  "$status" "$(( $(date +%s) - start ))" "$eta" "$shown" | tee -a "$logfile"
 exit "$status"

@@ -10,6 +10,7 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removal <name>     step 3 - take the outcome direction out, Riley and random checks
     .venv/bin/python outcome_leak.py removal-from-log <name>   redraw the step 3 picture from that run's log, no model
     .venv/bin/python outcome_leak.py removal-sturdy <name>   step a - last token vs every token, 10 random directions
+    .venv/bin/python outcome_leak.py other-direction    step d - take the Riley direction out instead, read Dana's leak
     .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
     .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
@@ -160,6 +161,24 @@ def read_removal(shrinks, masses, kept, riley_masses, moves):
     out = [L for L, (s, m) in enumerate(zip(shrinks, masses)) if s >= SHRINK_MIN and m >= MASS_MIN]
     grounds = [L for L in out if kept[L] >= KEEP_MIN and riley_masses[L] >= MASS_MIN]
     return out, grounds, [L for L in grounds if abs(moves[L]) < CONTROL_MAX]
+
+
+# step d, the other-direction control (agreed 2026-10-28, before the run): remove Riley's own direction instead of
+# the outcome direction - the mirror of step 3's lines, same numbers
+def read_other(riley_shrink, riley_mass, dana_kept, dana_mass):
+    """Step d at the fix row. The Riley direction (careless - careful) must take >= 0.5 of Riley's gap out, or it is
+    not a real direction and the control cannot be read. Then Dana's leak: keeps >= 0.8 = the outcome direction is
+    specific; loses >= 0.5 = outcome and choice share one blame axis; in between = partly shared. Both digit masses
+    (the lower leg of each case) must be >= 0.9."""
+    if min(riley_mass, dana_mass) < MASS_MIN:
+        return "UNREADABLE: digit mass < 0.9"
+    if riley_shrink < SHRINK_MIN:
+        return f"STOP: the Riley direction takes only {riley_shrink:.3f} of Riley's gap out (< {SHRINK_MIN})"
+    if dana_kept >= KEEP_MIN:
+        return "SPECIFIC: Dana's leak stays, the outcome direction is not blame in general"
+    if dana_kept <= 1 - SHRINK_MIN:
+        return "SHARED: Dana's leak goes too, outcome and choice share one blame axis"
+    return "PARTLY SHARED"
 
 
 # step c, the removed model on new cases (agreed 2026-10-23, before the smoke)
@@ -957,6 +976,52 @@ def removal_sturdy(name):
                         f"removal at {'the last token' if mode == 'last' else 'every token'} per run")
         print(f"picture: {pngs[mode]}")
     return ok
+
+
+def other_direction():
+    """Step d: take the Riley direction (careless - careful, Riley's own last token) out of every token, one row at a
+    time, and read Dana's leak and Riley's gap - the mirror of step a's every-token removal. Check first: the outcome
+    direction at FIX_ROW reproduces step a. Agreed with Sara 2026-10-28, before the run."""
+    setup = removal_setup()
+    if setup is None:
+        return True
+    model, blame, ids, base, leak, gap, diff = setup
+
+    def after(L, direction):
+        """Dana's leak and Riley's gap with direction removed at every token at row L, each with its lower mass."""
+        patch = (L, lambda hs: remove(hs, None if direction is None else direction.to(hs.device)))
+        d = {leg: blame(run(model, ids["Dana", leg], patch)[1]) for leg in ("no_harm", "harm")}
+        r = {leg: blame(run(model, ids["Riley", leg], patch)[1]) for leg in ("careful", "careless")}
+        return (d["harm"][0] - d["no_harm"][0], min(m for _, m in d.values()),
+                r["careless"][0] - r["careful"][0], min(m for _, m in r.values()))
+
+    def outcome_sum(L):  # Sam's + Alex's differences: the outcome direction before it is scaled to length 1
+        return diff("Sam", "no_harm", "harm", L) + diff("Alex", "no_harm", "harm", L)
+
+    dana, _, riley, _ = after(FIX_ROW, unit(outcome_sum(FIX_ROW)))
+    want = step_a_row(FIX_ROW)
+    d = max(abs(dana - want[0]), abs(riley - want[1]))
+    ok = d <= SANITY_TOL
+    print(f"\ncheck: outcome direction at row {FIX_ROW}, every token: Dana leak {dana:+.4f}, Riley gap {riley:+.4f} vs "
+          f"{STEP_A} {want[0]:+.4f}, {want[1]:+.4f}, largest difference {d:.6f} -> {'PASS' if ok else 'FAIL'} "
+          f"(tolerance {SANITY_TOL})")
+    if not ok:
+        return False
+
+    print("\n== REMOVAL of the Riley direction at EVERY token, one row at a time (row 0 = before any layer: no direction)")
+    print("cos = similarity of the Riley direction to the outcome direction (Sam + Alex) at that row")
+    print("row |   cos  | Dana leak  kept  mass | Riley gap  shrink  mass")
+    reads = {}
+    for L in range(len(model.model.layers) + 1):
+        dana, dana_mass, riley, riley_mass = after(L, unit(diff("Riley", "careful", "careless", L)))
+        reads[L] = (shrink(gap, riley), riley_mass, dana / leak, dana_mass)
+        print(f" {L:2d} | {cosine(diff('Riley', 'careful', 'careless', L), outcome_sum(L)):+.3f} | "
+              f"{dana:+.4f} {dana / leak:+.3f} {dana_mass:.3f} | {riley:+.4f} {reads[L][0]:+.3f} {riley_mass:.3f}")
+
+    r = reads[FIX_ROW]
+    print(f"\nREAD row {FIX_ROW} (Riley direction removed at every token): Riley gap shrink {r[0]:+.3f}, "
+          f"Dana leak kept {r[2]:+.3f} -> {read_other(*r)}")
+    return True
 
 
 def removal_picture(png, shrinks, kept, moves, control="random direction: leak moved",
@@ -1973,7 +2038,7 @@ if __name__ == "__main__":
     faulthandler.register(signal.SIGUSR1)  # `kill -USR1 <pid>` writes where the run is into the log
     cmd = sys.argv[1]
     no_name = {"smoke": smoke, "removed-smoke": removed_smoke, "eval-smoke": eval_smoke, "eval-natural": eval_natural,
-               "eval-natural-look": lambda: eval_natural(look=True)}
+               "eval-natural-look": lambda: eval_natural(look=True), "other-direction": other_direction}
     named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
              "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases,
              "normal-test": normal_test, "intervals": intervals, "gemma-scope": gemma_scope,
