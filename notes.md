@@ -520,7 +520,7 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   should still move with the outcome** - the fixture says those may legitimately depend on it. If they go flat too,
   we made gemma blind to outcomes, not removed a bias. Those two come later in gemma's answer, so the hook has to act
   at every token gemma writes (it reuses a's every-token removal).
-- **d) The other-direction control** (idea, 2026-10-24, not agreed or built). From "Inside the Unfair Judge" (arXiv
+- **d) The other-direction control** (idea 2026-10-24; rules agreed 2026-10-28, run 2026-10-29 - result below). From "Inside the Unfair Judge" (arXiv
   2607.11871), where it is called a bias-type swap - named differently here because "swap" already means patching:
   besides random directions, they steer with **another bias's** direction - it moves the score more than random but
   less than the right one. Our 10 random directions show "not any push takes the leak out". This asks the harder
@@ -534,6 +534,19 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   If both rows come out that way, the outcome direction holds the outcome and not "blame in general". If the Riley
   direction also takes Dana's leak out, the two share one blame axis. Check first how alike they are (their cosine).
   The eval-awareness arrow (step 2 below) is a second other direction to try. Lines written down before any run.
+
+  **What the run showed (dana-other-direction-gemma-2-2b-it).** The Riley direction is careless minus careful, from
+  Riley's own last token, removed at every token. Read at layer 17, with the lines fixed before the run: Riley's gap
+  drops 92.5% (so it is a real direction), Dana's leak keeps 67% - between "stays" and "goes", so the rule says
+  partly shared:
+
+  `READ row 17 (Riley direction removed at every token): Riley gap shrink +0.925, Dana leak kept +0.665 -> PARTLY SHARED`
+
+  The cause is unclear. At layers 4 and 11 the Riley direction did nothing to Riley, yet Dana's leak still dropped
+  37% and 24%. So removing any direction taken from gemma's own notes may cut a third with no meaning behind it;
+  random directions are a gentler test (they moved it 11% at most). Limits: one story built the direction, one
+  model. What would settle it, not run: a direction from gemma with no blame meaning (Dana's story with one harmless
+  word changed), removed the same way.
 
 ## Reading the result - same rule as my other repos
 
