@@ -151,6 +151,9 @@ casual rewrite, so there was no "real use" version to compare against. That's a 
   often it would work on stories in general.
 - **10 answers per story is few.** With a 95% interval, Dana's leak on the outside test can't be confirmed from 10
   answers alone - the exact read in step 1 is what shows it. The fixed version clearly holds.
+- **The direction isn't fully specific.** As a check, I removed a different direction instead - Riley's, built from
+  the real reason for blame - after layer 17. It took 92% of Riley's gap out, as it should, but also took about a
+  third off Dana's leak (67% kept). The cause is unclear.
 
 ## How it's done
 
@@ -178,6 +181,7 @@ All the commands are listed at the top of `outcome_leak.py`. Each finding above 
 | 1-2. the leak, and where it gets in | `patching` | `dana-outcome-patching-gemma-2-2b-it.log` |
 | 3. taking it out | `removal`, then `removal-sturdy` | `dana-outcome-removal-gemma-2-2b-it.log`, `dana-outcome-removal-alltokens-gemma-2-2b-it.log` |
 | 3. the fix on new stories | `removed-cases` | `outcome-removed-new-cases-gemma-2-2b-it.log` |
+| 3. a different direction removed instead | `other-direction` | `dana-other-direction-gemma-2-2b-it.log` |
 | 4. the outside test | `normal-test`, then `intervals` | `moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed.log`, `moral-luck-06-sep-gemma-2-2b-it-intervals.log` |
 | 5. eval awareness | `eval-smoke`, `eval-natural`, `eval-direction`, ... | `eval-awareness-*.log` |
 
