@@ -404,7 +404,7 @@ fixed gemma holds, and Riley still moves.
 
 Every one of the 280 answers was readable. For comparison, Sonnet 5.5 leaks on all 6 cases of the same test.
 
-**So - did we fix it?** For gemma, on this test: **yes, on both real test cases** (Dana, held out; Jesse, a story the
+**So - did we fix it?** For gemma, on this test: **yes, on both real test cases** (Dana, whose numbers picked the layer; Jesse, a story the
 direction never saw). Both leaked and both hold. Blame for the harm still follows the outcome (harm-blame P 1.0 in
 every case), liability is right 10/10 in both stories for Dana, Jesse, Sam, Alex and Kai, and Riley's real difference
 survives. Same pattern as step c: the fix works by **raising** blame for the lucky story (3 -> 6), not lowering it for
