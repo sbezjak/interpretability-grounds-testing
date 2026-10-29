@@ -543,7 +543,7 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   `READ row 17 (Riley direction removed at every token): Riley gap shrink +0.925, Dana leak kept +0.665 -> PARTLY SHARED`
 
   The cause is unclear. At layers 4 and 11 the Riley direction did nothing to Riley, yet Dana's leak still dropped
-  37% and 24%. So removing any direction taken from gemma's own notes may cut a third with no meaning behind it;
+  37% and 24%. So removing a direction taken from gemma's own notes may cut a third with no meaning behind it;
   random directions are a gentler test (they moved it 11% at most). Limits: one story built the direction, one
   model. What would settle it, not run: a direction from gemma with no blame meaning (Dana's story with one harmless
   word changed), removed the same way.

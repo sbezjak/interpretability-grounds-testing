@@ -801,7 +801,7 @@ def lens_from_log(name):
     return True
 
 
-CASES = {"Sam": "B", "Alex": "C", "Dana": "A", "Riley": "D"}  # Sam + Alex build the direction, Dana is held out
+CASES = {"Sam": "B", "Alex": "C", "Dana": "A", "Riley": "D"}  # Sam + Alex build the direction; Dana is not in it (her numbers pick the layer)
 
 
 def removal_setup(model_id=MODEL):

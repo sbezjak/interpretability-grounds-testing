@@ -7,9 +7,9 @@ verdict. It carries the question of the published `../judge-outcome-bias-probe` 
 grounds it should rest on? - from behavior (outside) to mechanism (inside).
 
 Both checks are done: the Dana outcome leak in `gemma-2-2b-it` (found, located at layer ~15, one direction removed
-after layer 17 fixes it on 2 of 3 stories, at a small cost) and eval awareness (stopped at its gates). Results:
-`README.md` and `reports/`. `notes.md` explains the method plainly; keep it that way - anyone should be able to get
-in.
+after layer 17 cuts it 70%; on two new stories it worked once and flipped once, at a small cost) and eval awareness
+(stopped at its gates). Results: `README.md` and `reports/`. `notes.md` explains the method plainly; keep it that
+way - anyone should be able to get in.
 
 ## How work is done here
 
