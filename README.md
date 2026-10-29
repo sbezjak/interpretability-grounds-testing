@@ -151,7 +151,7 @@ casual rewrite, so there was no "real use" version to compare against. That's a 
   often it would work on stories in general.
 - **10 answers per story is few.** With a 95% interval, Dana's leak on the outside test can't be confirmed from 10
   answers alone - the exact read in step 1 is what shows it. The fixed version clearly holds.
-- **The direction isn't fully specific.** As a check, I removed a different direction instead - Riley's, built from
+- **A different direction also moves the leak.** As a check, I removed a different direction instead - Riley's, built from
   the real reason for blame - after layer 17. It took 92% of Riley's gap out, as it should, but also took about a
   third off Dana's leak (67% kept). The cause is unclear.
 
