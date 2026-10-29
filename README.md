@@ -17,7 +17,8 @@ Full report, every number with its log line:
 
 ## Quick start (no model)
 
-No model needed, a few seconds each:
+No model needed. You need [uv](https://docs.astral.sh/uv/) (`curl -LsSf https://astral.sh/uv/install.sh | sh`). The
+install takes a few minutes (it downloads torch); then each command takes a few seconds:
 
 ```bash
 git clone https://github.com/sbezjak/interpretability-grounds-testing.git
