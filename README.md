@@ -93,7 +93,8 @@ run. Let layers 16-26 carry on and read the blame. The model never saw the crash
 | 17 | 5.96 | 88% |
 | 26 | 6.28 | 100% |
 
-Up to layer 13 the swap does nothing - the outcome isn't in that token's notes yet. Around layer 15 it jumps.
+Up to layer 13 the swap barely moves the blame - the outcome isn't in that token's notes yet. Around layer 15 it
+jumps.
 
 ### 3. Take the leak out (directional ablation)
 

@@ -299,10 +299,13 @@ ul{margin:.3rem 0;padding-left:1.2rem}li{margin:.15rem 0}
 <tr><td>Reproducibility</td><td>rerun matches earlier run within 0.001</td><td class="n">0.00005</td><td><span class="b ok">pass</span></td></tr>
 <tr><td>Standard test readable</td><td>&ge; 8 of 10 answers parse per story</td><td class="n">280 / 280</td><td><span class="b ok">pass</span></td></tr>
 <tr><td>Fixed</td><td>plain bleeds (P &ge; 0.8 or &le; 0.2), fixed P between 0.2 and 0.8, control still moves</td><td class="n">Dana and Jesse</td><td><span class="b ok">pass</span></td></tr>
+<tr><td>Leak out on a new story</td><td>at most half the leak left, by size (clarified after a smoke run, see limitations)</td><td class="n">Kai 63% left</td><td><span class="b bad">fail</span></td></tr>
+<tr><td>Random control on a new story</td><td>all 10 random &lt; 10%</td><td class="n">Kai 29%</td><td><span class="b bad">fail</span></td></tr>
 <tr><td>Outcome still used where valid</td><td>harm-blame and liability gaps keep &ge; 80%</td><td class="n">Dana's liability 78%</td><td><span class="b bad">fail</span></td></tr>
 <tr><td>Dictionary fits</td><td>rebuilt leak and control within 20%</td><td class="n">off by 59% / 64%</td><td><span class="b bad">fail</span></td></tr>
 <tr><td>Eval cue moves the model's read</td><td>test cue - real cue &ge; 0.2</td><td class="n">+0.001</td><td><span class="b bad">fail</span></td></tr>
 <tr><td>Other direction is real</td><td>removing it cuts the control's gap &ge; 50%</td><td class="n">92.5%</td><td><span class="b ok">pass</span></td></tr>
+<tr><td>Other direction leaves the leak alone</td><td>Dana's leak keeps &ge; 80%</td><td class="n">66.5%, partly shared</td><td><span class="b bad">fail</span></td></tr>
 </table>
 
 <h2>4. Method</h2>
