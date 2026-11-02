@@ -35,10 +35,15 @@ You need a Mac or PC with 16 GB of memory (8 GB is not enough), a free Hugging F
 time. Then, one at a time:
 
 ```bash
+# once: your Hugging Face token, so the model can download (the license is tied to your account)
 .venv/bin/hf auth login
+# step 0: load the model, read Dana's two stories, check that the swap used in step 2 does what it should (3 checks)
 bash scripts/run-evidence.sh my-smoke --eta "2-5 min (107 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py smoke
+# steps 1-2: measure the leak (harm minus no harm, should be 0), then find the layer where the outcome gets in
 bash scripts/run-evidence.sh my-patching --eta "2-5 min (22 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py patching my-patching
+# step 3: remove one direction after each layer in turn; read Dana's leak, Riley's control gap, 10 random directions
 bash scripts/run-evidence.sh my-removal --eta "~7 min (393 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removal-sturdy my-removal
+# step 4: the same removal at layer 17 on three stories the direction never saw (Jesse, Kai, Quinn)
 bash scripts/run-evidence.sh my-new-cases --eta "3-5 min (301 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removed-cases my-new-cases
 ```
 
