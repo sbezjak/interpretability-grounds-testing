@@ -9,7 +9,7 @@ show it). Then:
 bash scripts/run-evidence.sh my-smoke --eta "2-5 min" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py smoke
 ```
 
-All the commands are listed at the top of `outcome_leak.py`. Each finding in the report maps to one command:
+The runs in order, one step at a time: [tutorial.md](tutorial.md). All the commands are listed at the top of `outcome_leak.py`. Each finding in the report maps to one command:
 
 | finding | command | log |
 |---|---|---|

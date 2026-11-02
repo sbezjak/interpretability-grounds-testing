@@ -28,4 +28,5 @@ uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requi
 .venv/bin/python outcome_leak.py intervals     # 95% intervals for the sampled test, read from its log
 ```
 
-Running the model itself needs 16 GB and Google's Gemma license: [docs/running-the-model.md](docs/running-the-model.md).
+Running the model itself needs 16 GB and Google's Gemma license. Setup: [docs/running-the-model.md](docs/running-the-model.md).
+Then the four runs in order, with the log line to expect after each: [docs/tutorial.md](docs/tutorial.md).
