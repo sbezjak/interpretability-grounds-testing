@@ -366,6 +366,9 @@ What came out (fixed gemma reproduced step a exactly; Riley's gap kept 92%):
   directions move any leak by about 0.1-0.16 blame points - so a 10% line on a small leak sits in the noise. A lesson
   for next time, not a rule changed after the fact.
 - **Dana**: the leak is out, but liability keeps 78% - just under 80%.
+- **Quinn** wasn't tested, but the run logged the reads with the direction out too (`outcome-removed-new-cases-gemma-2-2b-it.log`
+  lines 13-14 and 25-26): the gap goes -0.14 -> -0.79, and the harm-blame and liability gaps keep 74% and 59%. Worked out
+  from those reads, information only: no rule applied and no random control ran.
 
 Two patterns:
 
@@ -852,7 +855,7 @@ Neither fixes the main blocker: a Dana prompt that a model believes is real.
 - **Feature** - one entry of that dictionary: an arrow it can write into the notes, with a strength (0 = off).
 - **Neuronpedia** - the public website with a page per feature: top text snippets, the words it pushes up, AI labels.
 - **Expected blame** - the probability-weighted average of the blame numbers.
-- **Fraction restored / removed** - how much of the leak one swap brought back (or took away): 0 = none, 1 = all.
+- **Fraction restored / removed** - how much of the leak one swap brought back (or took away): 0 = none, 1 = all. Rule for the run: a swap at row 0 must give 0 and a swap at row 26 must give 1.
 - **Logit lens** - running the model's final reader on the notes after every layer, to watch the answer form.
 - **Softcap (the squash)** - gemma's cap on scores, 30 x tanh(score / 30), so no score goes past 30.
 - **Direction** - a way to point in the space of the notes; here the average of harm-minus-no-harm, length 1.
