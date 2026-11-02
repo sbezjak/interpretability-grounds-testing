@@ -28,5 +28,19 @@ uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requi
 .venv/bin/python outcome_leak.py intervals     # 95% intervals for the sampled test, read from its log
 ```
 
-Running the model itself needs 16 GB and Google's Gemma license. Setup: [docs/running-the-model.md](docs/running-the-model.md).
-Then the four runs in order, with the log line to expect after each: [docs/tutorial.md](docs/tutorial.md).
+## Run the model (16 GB, about 15 minutes)
+
+You need a Mac or PC with 16 GB of memory (8 GB is not enough), a free Hugging Face account with
+[Google's Gemma license](https://huggingface.co/google/gemma-2-2b-it) accepted, and about 5 GB of download the first
+time. Then, one at a time:
+
+```bash
+.venv/bin/hf auth login
+bash scripts/run-evidence.sh my-smoke --eta "2-5 min (107 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py smoke
+bash scripts/run-evidence.sh my-patching --eta "2-5 min (22 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py patching my-patching
+bash scripts/run-evidence.sh my-removal --eta "~7 min (393 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removal-sturdy my-removal
+bash scripts/run-evidence.sh my-new-cases --eta "3-5 min (301 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removed-cases my-new-cases
+```
+
+Each run writes its whole output to `evidence/raw-logs/my-*.log`. What each step does and the log line to expect
+after it: [docs/tutorial.md](docs/tutorial.md). Which command made which finding: [docs/running-the-model.md](docs/running-the-model.md).
