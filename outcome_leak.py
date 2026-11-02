@@ -15,6 +15,8 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
     .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
     .venv/bin/python outcome_leak.py intervals [source log]   95% intervals on that test's P, from its log, no model
+    .venv/bin/python outcome_leak.py my-report [smoke patching removal new-cases log names]   your four runs against the
+                                                                     repo's logs, one page, no model
     .venv/bin/python outcome_leak.py gemma-scope <name>   the outcome direction in words: Gemma Scope + Neuronpedia
     .venv/bin/python outcome_leak.py gemma-scope-base <name>   the same gate on base gemma-2-2b (the dictionary's own)
     .venv/bin/python outcome_leak.py gemma-scope-look <name>   past the failed gate: features + labels, for learning only
@@ -451,6 +453,74 @@ def read_steer(plain, steered, masses, random_moves):
     if max(round(abs(m), 9) for m in random_moves) >= MOVE_MIN:
         return "MOVED, NOT SPECIFIC (a random arrow moved it too)"
     return "MOVED"
+
+
+# ---------------------------------------------------------------------------- your run against the repo's (my-report)
+LINE_TOL = 1e-3  # two log lines say the same thing if the words match and every number is within this (= SANITY_TOL)
+# The audit report's findings and what the four tutorial runs show for each: (finding, title, which run, line start).
+# A finding the four runs do not reach names the command that would.
+MY_FINDINGS = (
+    ("setup", "Setup works: the three swap checks", "smoke", r"^SMOKE honesty checks: "),
+    ("F1", "More blame after harm for the same choice", "patching", r"^leak = harm - no_harm = "),
+    ("F2", "Outcome reaches the answer at layer 15", "patching", r"^READ forward: "),
+    ("F3", "Removing one direction cuts the bias, control kept", "removal", r"^READ every line 5, "),
+    ("F3", "The fixed model's Dana and Riley numbers", "new-cases", r"^Dana leak: now "),
+    ("F3", "", "new-cases", r"^Riley gap: now "),
+    ("F5", "Side effects: liability weakens, Kai's bias flips", "new-cases", r"^READ Dana "),
+    ("F5", "", "new-cases", r"^READ Kai "),
+    ("F5", "", "new-cases", r"^READ Jesse "),
+)
+NOT_IN_MY_RUNS = (
+    ("F4", "Mitigation holds on the standard test", "normal-test, then intervals (280 sampled answers)"),
+    ("F6", "Gemma Scope's dictionary doesn't fit at layer 17", "gemma-scope"),
+    ("F7", "Eval awareness can't be measured with these prompts", "eval-smoke"),
+    ("F8", "Removing the control's own direction also cuts the bias", "other-direction"),
+)
+REPO_LOGS = {"smoke": "dana-smoke-gemma-2-2b-it-m5", "patching": "dana-outcome-patching-gemma-2-2b-it",
+             "removal": "dana-outcome-removal-alltokens-gemma-2-2b-it", "new-cases": "outcome-removed-new-cases-gemma-2-2b-it"}
+MY_PICTURES = {"patching": ("digits", "lens", "patching"), "removal": ("last", "every")}  # <name>-<k>.png
+
+
+def log_text(path):
+    """A log's text with its line breaks untouched: read_text() would turn a progress bar's "\r" into line breaks and
+    shift every line number after it. Decoding the bytes keeps the count grep -n and the tutorial use."""
+    return pathlib.Path(path).read_bytes().decode("utf-8", "replace")
+
+
+def find_line(text, pattern):
+    """The first line of text matching pattern (a regex on the line start). Returns (1-based line number, line), or
+    (0, "") when nothing matches - the page says so instead of comparing nothing with nothing."""
+    import re
+
+    for i, line in enumerate(text.split("\n"), 1):  # "\n" only: a progress bar's "\r" is not a line (grep -n agrees)
+        if re.search(pattern, line):
+            return i, line
+    return 0, ""
+
+
+def same_line(mine, repo, tol=LINE_TOL):
+    """Do two log lines say the same thing? The words must match exactly and each number must be within tol.
+    Returns (True/False, largest number difference). Different words or a different count of numbers = False."""
+    import re
+
+    num = r"[-+]?\d+(?:\.\d+)?"
+    a, b = re.findall(num, mine), re.findall(num, repo)
+    if re.sub(num, "#", mine) != re.sub(num, "#", repo) or len(a) != len(b):
+        return False, math.inf
+    diff = max((abs(float(x) - float(y)) for x, y in zip(a, b)), default=0.0)
+    return diff <= tol, diff
+
+
+def compare_runs(mine, repo, findings=MY_FINDINGS):
+    """One row per finding line: (finding, title, run, my line number, my line, repo line number, repo line, match,
+    largest difference). mine / repo map run -> that log's text. A missing line matches nothing."""
+    rows = []
+    for fid, title, run, pattern in findings:
+        n_mine, l_mine = find_line(mine[run], pattern)
+        n_repo, l_repo = find_line(repo[run], pattern)
+        ok, diff = same_line(l_mine, l_repo) if l_mine and l_repo else (False, math.inf)
+        rows.append((fid, title, run, n_mine, l_mine, n_repo, l_repo, ok, diff))
+    return rows
 
 
 # ------------------------------------------------------------------------------------------------ the model
@@ -1487,6 +1557,75 @@ def intervals(source="moral-luck-06-sep-gemma-2-2b-it-plain-vs-fixed"):
     return ok
 
 
+def my_report(smoke="my-smoke", patching="my-patching", removal="my-removal", new_cases="my-new-cases", logdir=None,
+              open_page=True):
+    """Your four tutorial runs against the repo's committed logs, as one page - no model. Each finding of the audit
+    report that the four runs reach gets your line next to the repo's, matched within LINE_TOL; the findings they do
+    not reach name the command that would. Writes <patching name>-report.html next to the logs and opens it."""
+    import html
+    import re
+    import webbrowser
+
+    out = pathlib.Path(logdir) if logdir else pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    names = {"smoke": smoke, "patching": patching, "removal": removal, "new-cases": new_cases}
+    mine = {run: log_text(out / f"{n}.log") for run, n in names.items()}
+    repo_dir = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    repo = {run: log_text(repo_dir / f"{n}.log") for run, n in REPO_LOGS.items()}
+    page = out / f"{patching}-report.html"
+    assert not page.exists(), f"{page} exists - a run never overwrites, use a new name"
+    footer = r"^\[run-evidence\] exit="  # the wrapper's last line: exit code and elapsed time
+    rows = compare_runs(mine, repo)
+    print(f"your logs: {', '.join(f'{r} = {n}.log' for r, n in names.items())}")
+    for run, n in names.items():  # the footer the wrapper wrote: exit and elapsed
+        tail = find_line(mine[run], footer)[1] or "(no run-evidence footer: run without the wrapper)"
+        print(f"  {n}.log: {tail}")
+    print(f"\n== your line vs the repo's (same words, every number within {LINE_TOL})")
+    for fid, title, run, n_mine, l_mine, n_repo, l_repo, ok, diff in rows:
+        where = f"{names[run]}.log:{n_mine or '-'} vs {REPO_LOGS[run]}.log:{n_repo or '-'}"
+        print(f"{fid:<5} {run:<9} | {where} | " + (f"MATCH, largest difference {diff:.6f}" if ok else
+              ("LINE MISSING" if not (l_mine and l_repo) else f"DIFFERENT, largest difference {diff}")))
+    n_ok = sum(r[7] for r in rows)
+    verdict = f"your run matches the repo's on {n_ok} of {len(rows)} lines"
+    print(f"\nVERDICT: {verdict} -> " + ("MATCH" if n_ok == len(rows) else "MISMATCH"))
+    print("not in these four runs: " + ", ".join(f"{fid} ({cmd})" for fid, _, cmd in NOT_IN_MY_RUNS))
+
+    audit = pathlib.Path(__file__).parent / "reports" / "dana-outcome-leak-gemma-2-2b-it-audit.html"
+    css = re.search(r"<style>.*?</style>", audit.read_text(), re.S)[0] if audit.exists() else "<style>body{font:14px system-ui}</style>"
+    e = html.escape
+    badge = lambda ok: '<span class="b ok">match</span>' if ok else '<span class="b bad">differs</span>'
+    trs = []
+    for fid, title, run, n_mine, l_mine, n_repo, l_repo, ok, diff in rows:
+        trs.append(f"<tr><td>{fid}</td><td>{e(title)}</td>"
+                   f"<td><span class=\"rc\">{e(l_mine) or '(line not found)'}</span><br><span class=\"meta\">{e(names[run])}.log:{n_mine or '-'}</span></td>"
+                   f"<td><span class=\"rc\">{e(l_repo) or '(line not found)'}</span><br><span class=\"meta\">{e(REPO_LOGS[run])}.log:{n_repo or '-'}</span></td>"
+                   f"<td>{badge(ok)}</td></tr>")
+    for fid, title, cmd in NOT_IN_MY_RUNS:
+        trs.append(f"<tr><td>{fid}</td><td>{e(title)}</td><td colspan=\"2\" class=\"meta\">not in these four runs: "
+                   f"<code>outcome_leak.py {e(cmd)}</code></td><td><span class=\"b hold\">not run</span></td></tr>")
+    figs = "".join(f'<figure><img src="{e(f.name)}" alt="{e(f.name)}" style="max-width:100%"><figcaption>{e(f.name)}</figcaption></figure>'
+                   for run, kinds in MY_PICTURES.items() for k in kinds if (f := out / f"{names[run]}-{k}.png").exists())
+    footers = "".join(f"<li><code>{e(n)}.log</code>: {e(find_line(mine[run], footer)[1] or 'no run-evidence footer')}</li>"
+                      for run, n in names.items())
+    cls = "ok" if n_ok == len(rows) else "bad"
+    page.write_text(f"""<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Your run against the repo's</title>{css}</head><body>
+<h1>Your run against the repo's: gemma-2-2b-it, the Dana outcome leak</h1>
+<p class="meta">Your four logs, read by <code>outcome_leak.py my-report</code>, no model. Two lines match when the words are the same and every number is within {LINE_TOL}.</p>
+<div class="verdict" style="border-left-color:var(--{cls})"><p><b>Verdict:</b> <span class="b {cls}">{'MATCH' if cls == 'ok' else 'MISMATCH'}</span> {e(verdict)}.</p></div>
+<ul>{footers}</ul>
+<h2>Findings of the audit report, your line next to the repo's</h2>
+<table><tr><th>ID</th><th>Finding</th><th>Your run</th><th>The repo's run</th><th></th></tr>{''.join(trs)}</table>
+<p class="meta">The findings' meaning, strength and limits: <a href="../../reports/dana-outcome-leak-gemma-2-2b-it-audit.html">the audit report</a>. What each line says: <a href="../../docs/tutorial.md">the tutorial</a>.</p>
+<h2>Your pictures</h2>{figs or '<p class="meta">no pictures found next to the logs</p>'}
+</body></html>
+""")
+    print(f"page: {page}")
+    if open_page:
+        webbrowser.open(page.as_uri())
+    return n_ok == len(rows)
+
+
 def neuronpedia(i):
     """Feature i's public Neuronpedia record (labels, top tokens, top snippets). Only the number i goes out."""
     import urllib.request
@@ -2041,7 +2180,7 @@ if __name__ == "__main__":
                "eval-natural-look": lambda: eval_natural(look=True), "other-direction": other_direction}
     named = {"patching": patching, "lens-from-log": lens_from_log, "removal": removal,
              "removal-from-log": removal_from_log, "removal-sturdy": removal_sturdy, "removed-cases": removed_cases,
-             "normal-test": normal_test, "intervals": intervals, "gemma-scope": gemma_scope,
+             "normal-test": normal_test, "intervals": intervals, "my-report": my_report, "gemma-scope": gemma_scope,
              "gemma-scope-base": lambda name: gemma_scope(name, BASE),
              "gemma-scope-look": lambda name: gemma_scope(name, look=True), "eval-controls": eval_controls,
              "dana-leak": dana_leak, "eval-direction": eval_direction,

@@ -120,6 +120,38 @@ That is why this tutorial promises a measurement, not a fix.
 Like step 3, this run first checks fixed gemma's Dana and Riley numbers against this repo's
 `dana-outcome-removal-alltokens-gemma-2-2b-it.log` within 0.001, prints PASS or FAIL, and goes on either way.
 
+## Step 5 - your run against the repo's, one page (no model)
+
+```bash
+.venv/bin/python outcome_leak.py my-report
+```
+
+Reads your four logs, finds the line behind each finding of the audit report that the four runs reach (setup, F1, F2,
+F3, F5), and sets it next to the same line from the repo's committed log. Two lines match when the words are the same
+and every number is within 0.001. The findings the four runs do not reach (F4, F6, F7, F8) are listed with the command
+that would. The page, `evidence/raw-logs/my-patching-report.html`, opens in your browser with your pictures under the
+table. The line to look for, on the terminal and on the page:
+
+```
+VERDICT: your run matches the repo's on 9 of 9 lines -> MATCH
+```
+
+If a log has another name (a second smoke attempt is `my-smoke-2`), pass the four names in order:
+`my-report my-smoke-2 my-patching my-removal my-new-cases`. A clean clone on an Apple M5 on 2 Nov 2026 gave 9 of 9.
+
+## Clean up - remove the model and the repo
+
+The model lives outside the repo, in Hugging Face's cache, about 5 GB. Look first, then delete:
+
+```bash
+ls ~/.cache/huggingface/hub                        # one folder per model
+.venv/bin/hf auth logout                           # forget the token, while the venv still exists
+rm -rf ~/.cache/huggingface/hub/models--google--gemma-2-2b-it
+cd .. && rm -rf interpretability-grounds-testing   # the repo, the venv and your logs and pictures
+```
+
+`uv cache clean` also drops the downloaded torch wheels, a few GB, if you do not use uv for anything else.
+
 ## Your own stories
 
 Not yet without editing the script: the two fixture files are fixed at `outcome_leak.py` lines 463-464, and the cases

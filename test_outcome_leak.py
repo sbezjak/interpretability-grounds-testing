@@ -16,7 +16,8 @@ import scorer
 from outcome_leak import (
     bootstrap_p, case_gate, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read,
     FIRST_REMOVAL, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word,
-    largest, left, liability_read, lowered, read_removal_log, step_a_row,
+    largest, left, liability_read, lowered, read_removal_log, step_a_row, same_line, find_line, compare_runs,
+    my_report, MY_FINDINGS, REPO_LOGS, log_text,
     middle_rows, natural_gate, outcome_direction, phrase_prob, pick_prefill, pick_rows, read_case, read_curve,
     read_other, read_removal, read_steer, readable, remove, riley_gate, run, sae_decode, sae_encode, shrink, side_scores, softcap,
     splice_gate, top_features,
@@ -530,6 +531,48 @@ def test_log_readers():
     assert len(rows) == 27 and rows[17] == (1.2309, 0.548, 3.3624, 0.978, -0.001)
 
 
+def test_my_report(tmp_path=None):
+    # same words + numbers within 0.001 = match; a number off by 0.01, different words, a missing line = not
+    ok, diff = same_line("leak = harm - no_harm = +2.7211", "leak = harm - no_harm = +2.7215")
+    assert ok is True and close(diff, 0.0004)
+    assert same_line("leak = harm - no_harm = +2.7211", "leak = harm - no_harm = +2.7311")[0] is False
+    assert same_line("READ Kai | x", "READ Kay | x") == (False, math.inf)
+    assert find_line("a\nleak = 1\n", r"^leak = ") == (2, "leak = 1") and find_line("a", r"^leak = ") == (0, "")
+    # a user's four logs = the committed ones with one number nudged inside the tolerance and one outside
+    import pathlib
+    import shutil
+    import tempfile
+
+    logs = pathlib.Path(__file__).parent / "evidence" / "raw-logs"
+    tmp = pathlib.Path(tmp_path or tempfile.mkdtemp())
+    for run, name in REPO_LOGS.items():
+        text = log_text(logs / f"{name}.log")
+        if run == "patching":
+            text = text.replace("leak = harm - no_harm = +2.7211", "leak = harm - no_harm = +2.7215")  # inside
+        if run == "new-cases":
+            text = text.replace("READ Kai   | +0.5524", "READ Kai   | +0.5624")  # outside: 0.01
+        (tmp / f"my-{run}.log").write_bytes(text.encode())  # bytes: keep the "\r" in the progress bars
+    shutil.copy(logs / "dana-outcome-patching-gemma-2-2b-it-digits.png", tmp / "my-patching-digits.png")
+    ok = my_report("my-smoke", "my-patching", "my-removal", "my-new-cases", logdir=tmp, open_page=False)
+    assert ok is False
+    page = (tmp / "my-patching-report.html").read_text()
+    assert page.count('class="b ok">match') == len(MY_FINDINGS) - 1 and page.count('class="b bad">differs') == 1
+    assert page.count('class="b hold">not run') == 4 and "my-patching-digits.png" in page
+    assert "MISMATCH" in page and "+2.7215" in page and "+0.5624" in page
+    mine = {run: log_text(tmp / f"my-{run}.log") for run in REPO_LOGS}
+    repo = {run: log_text(logs / f"{name}.log") for run, name in REPO_LOGS.items()}
+    rows = compare_runs(mine, repo)
+    assert [r[7] for r in rows] == [True, True, True, True, True, True, True, False, True]
+    assert all(r[3] == r[5] > 0 for r in rows)  # same line numbers as the committed logs: the lines were found
+    # line numbers count "\n" only, as grep -n and the tutorial do: a progress bar's "\r" must not add lines
+    assert find_line(repo["patching"], r"^leak = harm")[0] == 10 and find_line(repo["smoke"], r"^SMOKE honesty")[0] == 825
+    # the committed logs against themselves: every line matches, the page says MATCH
+    for run, name in REPO_LOGS.items():
+        shutil.copy(logs / f"{name}.log", tmp / f"same-{run}.log")
+    assert my_report("same-smoke", "same-patching", "same-removal", "same-new-cases", logdir=tmp, open_page=False)
+    assert "MATCH" in (tmp / "same-patching-report.html").read_text()
+
+
 def test_run():
     # run() and its hooks on a 3-layer toy, not gemma: 2 tokens of 2 numbers, and each layer adds the first token's
     # notes to every token - a stand-in for attention, so an edit to the first token shows up in the last one.
@@ -571,7 +614,7 @@ if __name__ == "__main__":
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
              test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
              test_other_direction, test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers,
-             test_run]
+             test_my_report, test_run]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")

@@ -45,8 +45,12 @@ bash scripts/run-evidence.sh my-patching --eta "2-5 min (22 s on an M5)" --cost 
 bash scripts/run-evidence.sh my-removal --eta "~7 min (393 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removal-sturdy my-removal
 # step 4: the same removal at layer 17 on three stories the direction never saw (Jesse, Kai, Quinn)
 bash scripts/run-evidence.sh my-new-cases --eta "3-5 min (301 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removed-cases my-new-cases
+# then, no model: one page with your line next to the repo's for each finding of the report, and your pictures
+.venv/bin/python outcome_leak.py my-report
 ```
 
 `.venv/bin/python outcome_leak.py smoke` alone runs the same; the wrapper keeps the whole output as
-`evidence/raw-logs/my-smoke.log`, with the time estimate and the real elapsed time, and never overwrites a log. What
-each step does and the log line to expect after it: [docs/tutorial.md](docs/tutorial.md).
+`evidence/raw-logs/my-smoke.log`, with the time estimate and the real elapsed time, and never overwrites a log. Each
+run leaves its log and its pictures in `evidence/raw-logs/`; nothing opens until `my-report`. What each step does
+and the log line to expect after it, and how to remove the model and the repo afterwards:
+[docs/tutorial.md](docs/tutorial.md).
