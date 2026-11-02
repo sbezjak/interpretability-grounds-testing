@@ -32,14 +32,16 @@ uv venv --python 3.11 .venv && uv pip install --python .venv/bin/python -r requi
 
 You need a Mac or PC with 16 GB of memory (8 GB is not enough), a free Hugging Face account with
 [Google's Gemma license](https://huggingface.co/google/gemma-2-2b-it) accepted, and about 5 GB of download the first
-time.
+time. Then, one at a time:
 
 ```bash
 .venv/bin/hf auth login
 bash scripts/run-evidence.sh my-smoke --eta "2-5 min (107 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py smoke
+bash scripts/run-evidence.sh my-patching --eta "2-5 min (22 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py patching my-patching
+bash scripts/run-evidence.sh my-removal --eta "~7 min (393 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removal-sturdy my-removal
+bash scripts/run-evidence.sh my-new-cases --eta "3-5 min (301 s on an M5)" --cost "0 (local)" -- .venv/bin/python -u outcome_leak.py removed-cases my-new-cases
 ```
 
 `.venv/bin/python outcome_leak.py smoke` alone runs the same; the wrapper keeps the whole output as
-`evidence/raw-logs/my-smoke.log`, with the time estimate and the real elapsed time, and never overwrites a log. The
-next three steps, `patching`, `removal-sturdy` and `removed-cases`, go the same way. Each one with the log line to
-expect after it: [docs/tutorial.md](docs/tutorial.md).
+`evidence/raw-logs/my-smoke.log`, with the time estimate and the real elapsed time, and never overwrites a log. What
+each step does and the log line to expect after it: [docs/tutorial.md](docs/tutorial.md).
