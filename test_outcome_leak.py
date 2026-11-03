@@ -608,13 +608,44 @@ def test_run():
     assert rows() == [[0, 1], [1, 1], [3, 1], [7, 1]]
 
 
+def test_report_links():
+    # every link and receipt on the audit report leads somewhere: a relative path or a link into this repo on GitHub
+    # names a file that exists; each data-at receipt line is really at that line of its log; the test count is current
+    import html as _html
+    import pathlib
+    import re
+
+    here = pathlib.Path(__file__).parent
+    page = (here / "reports" / "dana-outcome-leak-gemma-2-2b-it-audit.html").read_text()
+    repo = "https://github.com/sbezjak/interpretability-grounds-testing/"
+    targets = {_html.unescape(u) for u in re.findall(r'(?:href|src)="([^"#]+)"', page)}
+    assert targets
+    for u in targets:
+        if u.startswith(repo):
+            local = re.sub(r"^(blob|tree)/main/", "", u[len(repo):])
+            assert (here / local).exists(), u
+        elif u.startswith("http"):
+            assert u.startswith("https://"), u
+        else:
+            assert (here / "reports" / u).exists(), u
+    receipts = re.findall(r'data-at="([^:"]+):(\d+)">(.*?)</span>', page)
+    assert len(receipts) == 8
+    for log, n, quoted in receipts:
+        lines = log_text(here / "evidence" / "raw-logs" / log).split("\n")
+        assert _html.unescape(re.sub(r"<[^>]+>", "", quoted)).strip() in lines[int(n) - 1], (log, n)
+    for log in set(re.findall(r'data-log="([^"]+)"', page)):
+        assert (here / "evidence" / "raw-logs" / log).exists() or (here / log).exists(), log
+    n_tests = len(re.findall(r"^def test_", pathlib.Path(__file__).read_text(), flags=re.M))
+    assert f"Tests</a> {n_tests}/{n_tests} pass" in page, n_tests
+
+
 if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
              test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
              test_other_direction, test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers,
-             test_my_report, test_run]
+             test_my_report, test_run, test_report_links]
     for t in tests:
         t()
         print(f"PASS {t.__name__}")
