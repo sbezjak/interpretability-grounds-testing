@@ -329,7 +329,7 @@ Question: How much moral blame does Dana deserve for the choice they made, how m
 <mark>   56  READ row 17 (Riley direction removed at every token): Riley gap shrink +0.925, Dana leak kept +0.665 -&gt; PARTLY SHARED</mark></pre></details>
 
 <h2>3. Pre-registered checks</h2>
-<p>Every rule was written down before its run. Passed: setup, bias and control exist, removal at layers 16-18, fixed on the standard test (Dana, Jesse). Rules: <a href="https://github.com/sbezjak/interpretability-grounds-testing/blob/main/notes.md"><code>notes.md</code></a>.</p>
+<p>Each run prints its rules in its log before its results. The code holding them was committed after both runs (42a832a at 12:03 UTC, runs at 11:34 and 11:55 UTC), so this page shows the runs were scored by them, not that they were written first; the Kai "by size" rule was clarified after a smoke had shown his flip (see Limits). Passed: setup, bias and control exist, removal at layers 16-18, fixed on the standard test (Dana, Jesse). Rules: <a href="https://github.com/sbezjak/interpretability-grounds-testing/blob/main/outcome_leak.py"><code>outcome_leak.py</code></a>.</p>
 <table>
 <tr><th>Check</th><th>Rule</th><th>Result</th><th></th></tr>
 <tr><td>New story has a leak</td><td>|leak| &ge; 0.3</td><td class="n">Quinn -0.14</td><td><span class="b hold">Quinn dropped</span></td></tr>
