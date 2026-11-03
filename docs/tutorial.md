@@ -154,14 +154,7 @@ cd .. && rm -rf interpretability-grounds-testing   # the repo, the venv and your
 
 ## Your own stories
 
-Not yet without editing the script: the two fixture files are fixed at `outcome_leak.py` lines 463-464, and the cases
-are picked by letter (A is Dana). A fixture-path option is the planned next step. What a run on your own stories
-needs, so you can write them now:
-
-- The pair under test: two stories identical up to the last paragraph, where only the outcome differs; the same
-  question and answer format in both.
-- A control pair like Riley: the outcome the same in both, the choice different, so blame should differ.
-- Two build pairs like Sam and Alex, unrelated to the pair under test, for the direction. Or reuse Sam and Alex and
-  bring only the pair under test, which is what step 4 did.
-
-The format to copy is `fixtures/moral-luck-02.json`.
+This repo runs on the seven stories in `fixtures/`; it is a finding, not a tool. To test your own
+judge or your own cases from the outside, on any model, use
+[judge-outcome-bias-probe](https://github.com/sbezjak/judge-outcome-bias-probe): one command against your judge's
+prompt, and `fixtures/template.json` there for your own cases.
