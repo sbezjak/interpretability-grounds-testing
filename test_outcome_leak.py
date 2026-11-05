@@ -14,7 +14,7 @@ import torch
 import scorer
 
 from outcome_leak import (
-    bootstrap_p, case_gate, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read,
+    bootstrap_p, case_gate, DOSES, dose_gap, dose_gate, in_order, logged_choice, read_dose, contrast_direction, controls_gate, cosine, cued, eval_gap, eval_gate, eval_read,
     FIRST_REMOVAL, expected_blame, fixed_case, fraction_removed, fraction_restored, gate, held_sides, interval_word,
     largest, left, liability_read, lowered, read_removal_log, step_a_row, same_line, find_line, compare_runs,
     my_report, MY_FINDINGS, REPO_LOGS, log_text,
@@ -523,6 +523,46 @@ def test_other_direction():
     assert read_other(0.71, 0.5, 0.92, 1.0) == read_other(0.71, 1.0, 0.92, 0.89) == "UNREADABLE: digit mass < 0.9"
 
 
+def test_dose():
+    import json
+    import pathlib
+
+    # the stories: D3 is Dana word for word; D1 and D10 differ from it only in the glance, the risk and "During ..."
+    here = pathlib.Path(__file__).parent
+    dana = json.loads((here / "fixtures" / "moral-luck-02.json").read_text())["cases"]["A"]["legs"]
+    cases = json.loads((here / "fixtures" / "dana-dose.json").read_text())["cases"]
+    assert list(cases) == list(DOSES) and cases["D3"]["legs"] == dana
+    swaps = {"D1": ("1 second.", "1-second", "6,000", "During that 1 second"),
+             "D10": ("10 seconds.", "10-second", "600", "During those 10 seconds")}
+    for g, new in swaps.items():
+        for leg, text in cases[g]["legs"].items():
+            for old, n in zip(("3 seconds.", "3-second", "2,000", "During those 3 seconds"), new):
+                text = text.replace(n, old, 1)
+            assert text == dana[leg], (g, leg)  # swapping back gives Dana exactly: nothing else changed
+    # gate, the made-up example from the rules: plain no-harm 2.0 / 3.56 / 5.0 -> dose gap 3.0, in order
+    plain = {"D1": 2.0, "D3": 3.56, "D10": 5.0}
+    assert close(dose_gap(plain), 3.0) and in_order(plain) and dose_gate(3.0, [0.99] * 3) == []
+    assert dose_gate(0.2, [0.99] * 3) == ["dose gap 0.200 < 0.3"]
+    assert dose_gate(-1.0, [0.99] * 3) == ["dose gap -1.000 < 0.3"]  # one-sided: less blame for 10 s is no dose read
+    assert dose_gate(3.0, [0.99, 0.5]) == ["a read's mass 0.500 < 0.9"]
+    assert not in_order({"D1": 2.0, "D3": 5.5, "D10": 5.0})
+    # read: fixed 4.5 / 5.34 / 6.0 -> gap 1.5, kept 0.5 -> the fix flattened the dose (random moves small)
+    fixed_ = {"D1": 4.5, "D3": 5.34, "D10": 6.0}
+    kept, move, verdict = read_dose(3.0, dose_gap(fixed_), [0.99] * 3, [0.03, -0.05])
+    assert close(kept, 0.5) and move == -0.05 and verdict == "NOT KEPT: the fix flattened the dose"
+    # the line itself counts (>=): 4.0 of 5.0 = 0.8 kept (2.4 / 3.0 would be 0.7999... in floats); the control is not
+    # needed for KEPT
+    assert read_dose(5.0, 4.0, [0.99] * 3, [0.5])[2] == "KEPT"
+    assert read_dose(3.0, 1.5, [0.99] * 3, [0.03, 0.12])[2].startswith("NOT KEPT, NOT SPECIFIC")
+    assert read_dose(3.0, -0.6, [0.99] * 3, [0.0])[2] == "NOT KEPT: the fix flattened the dose"  # flipped: not kept
+    assert read_dose(3.0, 2.9, [0.99, 0.6], [0.0])[2] == "UNREADABLE: digit mass < 0.9"
+    # the check's numbers: Dana's choice reads as the new-cases log printed them (:15-16 plain, :27-28 fixed)
+    text = log_text(here / "evidence" / "raw-logs" / f"{REPO_LOGS['new-cases']}.log")
+    assert logged_choice(text, "plain") == {"no_harm": 3.5629, "harm": 6.2839}
+    assert logged_choice(text, "fixed") == {"no_harm": 5.3407, "harm": 6.1647}
+    assert logged_choice(text, "plain", "Riley") == {"careful": 3.0598, "careless": 6.4988}
+
+
 def test_log_readers():
     # the committed logs, no model. Row 17 sits in two tables of step a's log (:43 last token, :81 every token);
     # fixed gemma is checked against the every-token one
@@ -643,7 +683,7 @@ if __name__ == "__main__":
     tests = [test_expected_blame, test_fraction_restored, test_fraction_removed, test_softcap, test_gate, test_read_curve,
              test_outcome_direction, test_remove, test_remove_every_token, test_random_control,
              test_liability_read, test_eval_awareness, test_eval_natural, test_eval_direction,
-             test_new_cases, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
+             test_new_cases, test_dose, test_normal_test, test_intervals, test_shrink_and_rules, test_gemma_scope,
              test_other_direction, test_count_line_numbers, test_count_every_path, test_run_evidence, test_log_readers,
              test_my_report, test_run, test_report_links]
     for t in tests:

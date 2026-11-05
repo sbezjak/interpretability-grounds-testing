@@ -13,6 +13,7 @@ Top half: the measurement logic (tested by test_outcome_leak.py, no model). Bott
     .venv/bin/python outcome_leak.py other-direction    step d - take the Riley direction out instead, read Dana's leak
     .venv/bin/python outcome_leak.py removed-smoke      step c smoke - the three reads on Kai, fixed gemma vs step a
     .venv/bin/python outcome_leak.py removed-cases <name>   step c - fixed gemma on new cases E-G, Dana, Riley
+    .venv/bin/python outcome_leak.py dose <name>        step e - fixed gemma on Dana at 1 s / 3 s / 10 s: dose kept?
     .venv/bin/python outcome_leak.py normal-test <name>   the paid models' moral-luck test on plain and fixed gemma
     .venv/bin/python outcome_leak.py intervals [source log]   95% intervals on that test's P, from its log, no model
     .venv/bin/python outcome_leak.py my-report [smoke patching removal new-cases log names]   your four runs against the
@@ -232,6 +233,53 @@ def read_case(plain, fixed, fixed_masses, moves):
     out = gone <= LEFT_MAX and abs(move) < CONTROL_MAX and min(fixed_masses[0]) >= MASS_MIN
     kept = harm_kept >= KEEP_MIN and liability_kept >= KEEP_MIN and min(fixed_masses[1]) >= MASS_MIN
     return gone, harm_kept, liability_kept, move, out, kept
+
+
+# step e, the dose: does fixed gemma keep how bad Dana's act was? (agreed with Sara 2026-11-05, before the run)
+DOSES = ("D1", "D3", "D10")  # fixtures/dana-dose.json: Dana's glance at 1 s, 3 s (Dana word for word), 10 s
+
+
+def dose_gap(blames):
+    """blames = {glance: choice blame} for one outcome. The dose gap: 10 s minus 1 s - how much more blame the
+    longer glance gets, with the outcome held fixed."""
+    return blames["D10"] - blames["D1"]
+
+
+def in_order(blames):
+    """1 s < 3 s < 10 s, each step up (information only)."""
+    return blames["D1"] < blames["D3"] < blames["D10"]
+
+
+def dose_gate(gap, masses):
+    """Plain gemma, one outcome. Returns the reasons to drop it; empty = it can be tested. One-sided: the longer
+    glance must get at least GAP_MIN more blame, or gemma does not read the dose here."""
+    reasons = [f"dose gap {gap:.3f} < {GAP_MIN}"] if gap < GAP_MIN else []
+    reasons += [f"a read's mass {min(masses):.3f} < {MASS_MIN}"] if min(masses) < MASS_MIN else []
+    return reasons
+
+
+def read_dose(plain_gap, fixed_gap, fixed_masses, moves):
+    """Rules 3-4 for one outcome. moves = what each random direction did to the plain dose gap, as a shrink
+    (0.1 = took a tenth of it away). Returns (kept, largest random move, verdict)."""
+    kept, move = fixed_gap / plain_gap, largest(moves)
+    if min(fixed_masses) < MASS_MIN:
+        verdict = f"UNREADABLE: digit mass < {MASS_MIN}"
+    elif kept >= KEEP_MIN:
+        verdict = "KEPT"
+    elif abs(move) < CONTROL_MAX:
+        verdict = "NOT KEPT: the fix flattened the dose"
+    else:
+        verdict = "NOT KEPT, NOT SPECIFIC: a random direction moved the dose gap too"
+    return kept, move, verdict
+
+
+def logged_choice(text, model_name, who="Dana"):
+    """One case's choice blame per leg, as a removed-cases log printed it: {leg: expected blame}. model_name = plain
+    or fixed. The 3 s dose stories are Dana's own, so the dose run must reproduce these."""
+    import re
+
+    part = text.split(f"== {model_name.upper()} gemma")[1].split("\n== ")[0]
+    return {m[1]: float(m[2]) for m in re.finditer(rf"^{who}\s+(\S+)\s+\| choice (\S+)", part, re.M)}
 
 
 # the normal test: the paid models' moral-luck test on plain and fixed gemma (agreed 2026-10-23, before the run)
@@ -1391,6 +1439,94 @@ def removed_cases(name):
     return ok
 
 
+DOSE_FIXTURE = FIXTURE.parent / "dana-dose.json"  # Dana at 1 s / 3 s / 10 s, signed off by Sara 2026-11-05
+
+
+def dose(name):
+    """Step e: does fixed gemma keep how bad Dana's act was? Choice blame for Dana's glance at 1 s, 3 s and 10 s, the
+    outcome held fixed (no-harm and harm read apart), plain and fixed gemma. Agreed with Sara 2026-11-05, before the
+    run."""
+    import transformers
+
+    print(f"torch {torch.__version__} | transformers {transformers.__version__} | mps {torch.backends.mps.is_available()}")
+    tok, model = load()
+    print(f"model {MODEL} revision {getattr(model.config, '_commit_hash', None)} | dtype {model.dtype}")
+    dids = digit_ids(tok)
+    u = fix_direction(model, tok)
+    users = {g: prompts(g, DOSE_FIXTURE) for g in DOSES}
+
+    def choice(user):  # (expected blame, digit mass) at the choice number
+        return expected_blame([run(model, encode(tok, user))[1][i].item() for i in dids])
+
+    got = {}
+    for model_name in ("plain", "fixed"):
+        print(f"\n== {model_name.upper()} gemma: choice blame = expected blame (digit mass)")
+        with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext():
+            got[model_name] = {(g, leg): choice(user) for g, legs in users.items() for leg, user in legs.items()}
+        for (g, leg), (b, m) in got[model_name].items():
+            print(f"{g:3s} {leg:8s} | choice {b:.4f} ({m:.4f})")
+
+    source = REPO_LOGS["new-cases"]
+    print(f"\n== CHECK. D3 is Dana word for word: it must reproduce {source} (tolerance {SANITY_TOL})")
+    text = log_text(pathlib.Path(__file__).parent / "evidence" / "raw-logs" / f"{source}.log")
+    ok = True
+    for model_name in ("plain", "fixed"):
+        want = logged_choice(text, model_name)
+        for leg in ("no_harm", "harm"):
+            now = got[model_name]["D3", leg][0]
+            ok &= abs(now - want[leg]) <= SANITY_TOL
+            print(f"{model_name} D3 {leg}: now {now:.4f} vs logged {want[leg]:.4f}, difference "
+                  f"{abs(now - want[leg]):.6f} -> {'PASS' if abs(now - want[leg]) <= SANITY_TOL else 'FAIL'}")
+    if not ok:
+        print("CHECK STOP: the 3 s stories do not reproduce Dana - something in the setup changed")
+        return False
+
+    def blames(model_name, leg):
+        return {g: got[model_name][g, leg][0] for g in DOSES}
+
+    print(f"\n== GATE. plain gemma, per outcome: dose gap = 10 s - 1 s >= {GAP_MIN}, every read's mass >= {MASS_MIN}")
+    tested = []
+    for leg in ("no_harm", "harm"):
+        b = blames("plain", leg)
+        stop = dose_gate(dose_gap(b), [got["plain"][g, leg][1] for g in DOSES])
+        print(f"{leg:8s} | 1 s {b['D1']:.4f} | 3 s {b['D3']:.4f} | 10 s {b['D10']:.4f} | dose gap {dose_gap(b):+.4f} | "
+              f"in order {in_order(b)} -> " + ("TESTED" if not stop else "DROPPED: " + "; ".join(stop)))
+        tested += [leg] if not stop else []
+    if not tested:
+        print("GATE STOP: plain gemma does not read the dose in either outcome")
+        return True
+
+    print(f"\n== RANDOM CONTROL. {len(SEEDS)} random directions, each removed the way fixed gemma removes u: what each "
+          "does to the dose gap (shrink)")
+    randoms = [random_direction(model, s) for s in SEEDS]
+    moves = {}
+    for leg in tested:
+        moves[leg] = []
+        for ru in randoms:
+            with fixed(model, ru):
+                b = {g: choice(users[g][leg])[0] for g in ("D1", "D10")}
+            moves[leg].append(shrink(dose_gap(blames("plain", leg)), dose_gap(b)))
+        print(f"{leg:8s} largest {largest(moves[leg]):+.3f} | median {statistics.median(moves[leg]):+.3f}")
+
+    print(f"\n== READ, per outcome (kept = fixed dose gap / plain dose gap >= {KEEP_MIN}, mass >= {MASS_MIN}; a NOT KEPT "
+          f"counts only if every random move < {CONTROL_MAX})")
+    for leg in tested:
+        p, f = blames("plain", leg), blames("fixed", leg)
+        kept, move, verdict = read_dose(dose_gap(p), dose_gap(f), [got["fixed"][g, leg][1] for g in DOSES], moves[leg])
+        print(f"READ {leg:8s} | dose gap {dose_gap(p):+.4f} -> {dose_gap(f):+.4f}, kept {kept:.3f} | random "
+              f"{move:+.3f} | in order: plain {in_order(p)}, fixed {in_order(f)} | {verdict}")
+
+    print("\n== ANSWERS. greedy, 80 tokens from the prefill, plain and fixed (information only - read together)")
+    for g, legs in users.items():
+        for leg, user in legs.items():
+            ids = encode(tok, user)
+            for model_name in ("plain", "fixed"):
+                with fixed(model, u) if model_name == "fixed" else contextlib.nullcontext(), torch.no_grad():
+                    out = model.generate(ids, max_new_tokens=80, do_sample=False)
+                print(f"\n-- {g} {leg} {model_name}:\n{PREFILL}{tok.decode(out[0, ids.shape[1]:])}")
+    return True
+
+
 SAMPLE_SEED = 0  # torch.manual_seed before every story's 10 answers: a rerun gives the same answers
 MAX_NEW = 256  # the fields are the first four lines; the paid runs allowed 4096, answers hitting this are counted
 
@@ -2183,7 +2319,7 @@ if __name__ == "__main__":
              "normal-test": normal_test, "intervals": intervals, "my-report": my_report, "gemma-scope": gemma_scope,
              "gemma-scope-base": lambda name: gemma_scope(name, BASE),
              "gemma-scope-look": lambda name: gemma_scope(name, look=True), "eval-controls": eval_controls,
-             "dana-leak": dana_leak, "eval-direction": eval_direction,
+             "dana-leak": dana_leak, "eval-direction": eval_direction, "dose": dose,
              "eval-direction-look": lambda model_id, pairs=None: eval_direction(model_id, pairs, look=True),
              "eval-natural-on": lambda model_id: eval_natural(model_id=model_id, prefills=NATURAL_PREFILLS_ALL)}
     sys.exit(0 if (no_name[cmd]() if cmd in no_name else named[cmd](*sys.argv[2:])) else 1)

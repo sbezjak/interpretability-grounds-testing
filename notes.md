@@ -550,6 +550,32 @@ Order: **a**, then **b**. The removed-model test (**c**) is planned; when it run
   random directions are a gentler test (they moved it 11% at most). Limits: one story built the direction, one
   model. What would settle it, not run: a direction from gemma with no blame meaning (Dana's story with one harmless
   word changed), removed the same way.
+- **e) The dose - does the fix keep how bad the act was?** (a reader's question on the article, 2026-11-05; stories
+  and rules agreed with Sara 2026-11-05, before any run). Riley checks one kind of act against another (watching the
+  road vs the phone). This asks something finer: the *same* act at a bigger dose, with the outcome held fixed. In
+  their test on qwen2.5-3b, blame for a longer version of the same act came out higher more reliably than across
+  different acts, so a fix could keep Riley's gap and still flatten the dose.
+
+  The stories (`fixtures/dana-dose.json`): Dana's glance at **1 s, 3 s and 10 s**, each with no harm and with harm.
+  Three phrases change, nothing else: the glance length, the risk line (the same risk per second: 3 s = 1 in 2,000,
+  so 1 s = 1 in 6,000 and 10 s = 1 in 600) and "During those 3 seconds". The 3 s pair is Dana word for word.
+
+  **Dose gap** = choice blame at 10 s minus at 1 s, read apart for no-harm and for harm. Worked example (made up):
+  plain 2.0 / 3.56 / 5.0 -> gap 3.0; fixed 4.5 / 5.34 / 6.0 -> gap 1.5; kept 1.5 / 3.0 = 0.5 -> not kept.
+
+  1. **Check:** the 3 s pair must reproduce Dana's choice reads in outcome-removed-new-cases-gemma-2-2b-it within
+     0.001 (plain 3.5629 / 6.2839, fixed 5.3407 / 6.1647). If not, stop: the setup changed.
+  2. **Gate, plain gemma, per outcome:** every read's digit mass >= 0.9 and the dose gap >= 0.3. An outcome that
+     fails is dropped (gemma doesn't read the dose there - a result); both fail -> stop.
+  3. **Read, per outcome tested:** **kept** if the fixed dose gap is at least 0.8 of the plain one, digit mass >= 0.9.
+  4. **Control:** 10 random directions removed the same way (seeds 0-9). A *not kept* counts as the outcome
+     direction's doing only if every random direction moves the dose gap by less than 0.1 of it (a shrink, as in
+     every earlier control).
+  5. **Information only:** whether 1 s < 3 s < 10 s holds in full; one greedy answer per story, plain and fixed.
+
+  Known before the run: the 3 s pair is in-sample (Dana's numbers picked layer 17), and if plain 10 s with harm sits
+  near 9, a smaller gap after the fix may be the scale's top, not the fix. Command:
+  `outcome_leak.py dose dana-dose-gemma-2-2b-it`, on the M5 (16 GB).
 
 ## Reading the result - same rule as my other repos
 

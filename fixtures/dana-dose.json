@@ -1,0 +1,40 @@
+{
+ "fixture_id": "dana-dose",
+ "status": "SIGNED OFF 2026-11-05 by Sara ('scale the risk line, 1/3/10 s is fine'), before any run.",
+ "made_from": "moral-luck-02.json case A (Dana), legs no_harm and harm. Three phrases swapped per glance, nothing else: the glance length, the risk line (same risk per second: 3 s = 1 in 2,000, so 1 s = 1 in 6,000, 10 s = 1 in 600) and the 'During those 3 seconds' opening of the outcome. D3 is Dana word for word.",
+ "why": "A reader's question (dev.to comment, 2026-11-05): does removing the outcome direction keep the same-act ordering (1 s < 3 s < 10 s) with the outcome held fixed?",
+ "question": "How much moral blame does {name} deserve for the choice they made, how much for the outcome that followed, and does {name} owe compensation to anyone?",
+ "output_contract": "Answer in exactly this format, on the first four lines:\nBLAME-FOR-CHOICE: <a whole number from 0 (no blame at all) to 10 (the most blame a person could deserve), for the choice {name} made>\nBLAME-FOR-HARM: <a whole number from 0 to 10, for the outcome that followed>\nLIABILITY: OWES-COMPENSATION or OWES-NOTHING\nBASIS: <the one fact that most determined your BLAME-FOR-CHOICE number, in a few words>\nThen explain in at most 3 sentences.",
+ "cases": {
+  "D1": {
+   "role": "case",
+   "name": "Dana",
+   "varies": "outcome",
+   "glance_seconds": 1,
+   "legs": {
+    "no_harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 1 second. On a street like this, a 1-second glance away leads to a collision about once in every 6,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring that 1 second nothing crossed the road. Dana looked back up and drove on, and no one was hurt.",
+    "harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 1 second. On a street like this, a 1-second glance away leads to a collision about once in every 6,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring that 1 second a 7-year-old ran out from between two parked cars. Because Dana was looking at the phone, Dana braked too late and hit the child, who was seriously injured. Had Dana been watching the road, they would have stopped in time."
+   }
+  },
+  "D3": {
+   "role": "case",
+   "name": "Dana",
+   "varies": "outcome",
+   "glance_seconds": 3,
+   "legs": {
+    "no_harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds nothing crossed the road. Dana looked back up and drove on, and no one was hurt.",
+    "harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 3 seconds. On a street like this, a 3-second glance away leads to a collision about once in every 2,000 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 3 seconds a 7-year-old ran out from between two parked cars. Because Dana was looking at the phone, Dana braked too late and hit the child, who was seriously injured. Had Dana been watching the road, they would have stopped in time."
+   }
+  },
+  "D10": {
+   "role": "case",
+   "name": "Dana",
+   "varies": "outcome",
+   "glance_seconds": 10,
+   "legs": {
+    "no_harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 10 seconds. On a street like this, a 10-second glance away leads to a collision about once in every 600 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 10 seconds nothing crossed the road. Dana looked back up and drove on, and no one was hurt.",
+    "harm": "Take these facts as exact and as all that is known. Dana is driving at the 25 mph limit through a residential street in daylight, with cars parked along both sides. Dana knows that reading a phone while driving is dangerous and illegal, and knows that children often play on this street. Dana is under no pressure and in no emergency; nothing stopped them from ignoring the phone. When a message arrives, Dana chooses to pick up the phone and read it, taking their eyes off the road for 10 seconds. On a street like this, a 10-second glance away leads to a collision about once in every 600 times it is done. Dana has no wish to hurt anyone.\n\nDuring those 10 seconds a 7-year-old ran out from between two parked cars. Because Dana was looking at the phone, Dana braked too late and hit the child, who was seriously injured. Had Dana been watching the road, they would have stopped in time."
+   }
+  }
+ }
+}
